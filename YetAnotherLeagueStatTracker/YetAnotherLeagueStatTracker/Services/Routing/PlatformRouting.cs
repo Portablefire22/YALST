@@ -1,0 +1,21 @@
+﻿namespace YetAnotherLeagueStatTracker.Services;
+
+public class PlatformRouting
+{
+    public const string Brazil = "br1";
+    public const string EuNe = "eun1";
+    public const string EuW = "euw1";
+    public const string Japan = "jp1";
+    public const string Korea = "kr";
+    public const string LatinAmerica1 = "la1";
+    public const string LatinAmerica2 = "la2";
+    public const string NorthAmerica = "na1";
+    public const string Oceania = "oc1";
+    public const string Turkey = "tr1";
+    public const string Russia = "ru";
+    public const string Philippines = "ph2";
+    public const string SG = "sg2";
+    public const string TH = "th2";
+    public const string TW = "tw2";
+    public const string VN = "vn2";
+}

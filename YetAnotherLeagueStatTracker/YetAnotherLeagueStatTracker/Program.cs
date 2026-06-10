@@ -5,6 +5,7 @@ using YetAnotherLeagueStatTracker.Client.Pages;
 using YetAnotherLeagueStatTracker.Components;
 using YetAnotherLeagueStatTracker.Components.Account;
 using YetAnotherLeagueStatTracker.Data;
+using YetAnotherLeagueStatTracker.Services;
 
 namespace YetAnotherLeagueStatTracker;
 
@@ -14,6 +15,8 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Services.AddSingleton<RiotClient>(new RiotClient(builder.Configuration["RiotAPI"]));
+        
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
