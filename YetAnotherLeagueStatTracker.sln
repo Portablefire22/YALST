@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YetAnotherLeagueStatTracker", "YetAnotherLeagueStatTracker\YetAnotherLeagueStatTracker\YetAnotherLeagueStatTracker.csproj", "{03DEA02E-2709-4AFE-8B45-FCDD9A91FF1B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YetAnotherLeagueStatTracker.Client", "YetAnotherLeagueStatTracker\YetAnotherLeagueStatTracker.Client\YetAnotherLeagueStatTracker.Client.csproj", "{33553108-FF43-46E7-83FD-5832D29015F2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{03DEA02E-2709-4AFE-8B45-FCDD9A91FF1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03DEA02E-2709-4AFE-8B45-FCDD9A91FF1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03DEA02E-2709-4AFE-8B45-FCDD9A91FF1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03DEA02E-2709-4AFE-8B45-FCDD9A91FF1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33553108-FF43-46E7-83FD-5832D29015F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33553108-FF43-46E7-83FD-5832D29015F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33553108-FF43-46E7-83FD-5832D29015F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33553108-FF43-46E7-83FD-5832D29015F2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
