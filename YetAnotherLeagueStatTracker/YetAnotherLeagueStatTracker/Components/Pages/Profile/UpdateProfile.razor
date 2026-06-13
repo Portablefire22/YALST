@@ -1,0 +1,24 @@
+﻿@using YetAnotherLeagueStatTracker.Services
+@inject RiotClient RiotClient
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveServer
+
+<div class="update-container">
+    <button class="btn btn-primary" onclick="@(async () => await OnUpdate())">Update</button>
+    <small>Last Updated: @DateTimeOffset.FromUnixTimeMilliseconds(LastUpdated).LocalDateTime</small>
+</div>
+
+@code {
+    [Parameter]
+    public required string Puuid { get; set; }
+    [Parameter]
+    public long LastUpdated { get; set; }
+
+    public async Task OnUpdate()
+    {
+        var summoner = await RiotClient.UpdateSummoner(Puuid);
+        if (summoner == null) return;
+        NavigationManager.NavigateTo($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}", true);
+    }
+}

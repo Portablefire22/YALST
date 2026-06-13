@@ -2,6 +2,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    margin: 0;
 }
 
 main {
@@ -10,6 +12,25 @@ main {
 
 .sidebar {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+}
+
+.footbar {
+    position: absolute;
+    overflow: hidden;
+    bottom: 0;
+    width: 100%;
+    min-height: 2em;
+    display: flex;
+    padding: 0.5em;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    background-color: #f5a9b8;
+}
+
+.footbar p {
+    margin: 0;
+    font-weight: bold;
 }
 
 .top-row {

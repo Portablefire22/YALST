@@ -18,4 +18,10 @@ public class PlatformRouting
     public const string TH = "th2";
     public const string TW = "tw2";
     public const string VN = "vn2";
+
+    public static bool IsValid(string input)
+    {
+        return input is Brazil or EuNe or EuW or Japan or Korea or LatinAmerica1 or LatinAmerica2 or NorthAmerica
+            or Oceania or Turkey or Russia or Philippines or SG or TH or TW or VN;
+    }
 }

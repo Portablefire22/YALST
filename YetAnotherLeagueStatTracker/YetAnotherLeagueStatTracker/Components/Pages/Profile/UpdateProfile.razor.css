@@ -1,0 +1,10 @@
+﻿
+.update-container {
+    display: flex;
+    flex-direction: column;
+    float: right;
+}
+
+button {
+    border-radius: 1em;
+}

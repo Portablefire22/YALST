@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YetAnotherLeagueStatTracker.Data;
 
@@ -10,9 +11,11 @@ using YetAnotherLeagueStatTracker.Data;
 namespace YetAnotherLeagueStatTracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613215148_AddSummonerRank")]
+    partial class AddSummonerRank
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -411,17 +414,12 @@ namespace YetAnotherLeagueStatTracker.Migrations
             modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.RankedModel", b =>
                 {
                     b.HasOne("YetAnotherLeagueStatTracker.Data.LeagueModels.SummonerModel", "Summoner")
-                        .WithMany("RankedModels")
+                        .WithMany()
                         .HasForeignKey("SummonerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Summoner");
-                });
-
-            modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.SummonerModel", b =>
-                {
-                    b.Navigation("RankedModels");
                 });
 #pragma warning restore 612, 618
         }

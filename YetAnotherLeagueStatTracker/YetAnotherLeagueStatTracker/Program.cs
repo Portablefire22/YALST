@@ -40,6 +40,7 @@ public class Program
             options.UseSqlite(connectionString));
         
         builder.Services.AddSingleton<RiotClient>();
+        builder.Services.AddSingleton<DataDragon>();
         
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

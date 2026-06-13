@@ -11,6 +11,9 @@ public class SummonerModel
     public string Puuid { get; set; }
     public long SummonerLevel { get; set; }
     public string GameName { get; set; }
+    
+    public ICollection<RankedModel>? RankedModels { get; set; }
+    
     public string TagLine { get; set; }
     public string Region { get; set; }
     public int ProfileIconId { get; set; }
