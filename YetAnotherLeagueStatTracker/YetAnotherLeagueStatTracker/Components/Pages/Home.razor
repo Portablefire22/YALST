@@ -12,6 +12,7 @@ Welcome to your new app.
 {
     protected override async void OnInitialized()
     { 
-        var account = await RiotClient.AccountByRiotId("Lilith", "Nyaa");
+        var account = await RiotClient.SummonerByRiotId("Lilith", "Nyaa");
+        Console.WriteLine($"{account.GameName}");
     }
 }

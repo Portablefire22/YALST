@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using YetAnotherLeagueStatTracker.Client.Pages;
 using YetAnotherLeagueStatTracker.Components;
 using YetAnotherLeagueStatTracker.Components.Account;
@@ -15,7 +16,6 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddSingleton<RiotClient>(new RiotClient(builder.Configuration["RiotAPI"]));
         
         // Add services to the container.
         builder.Services.AddRazorComponents()
@@ -36,8 +36,11 @@ public class Program
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
                                throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
             options.UseSqlite(connectionString));
+        
+        builder.Services.AddSingleton<RiotClient>();
+        
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddIdentityCore<ApplicationUser>(options =>
