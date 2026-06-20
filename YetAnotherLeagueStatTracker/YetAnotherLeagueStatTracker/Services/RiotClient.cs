@@ -245,6 +245,50 @@ public class RiotClient : IRiotClient
       await UpdateSummonerRankByPuuid(model.Puuid);
       return model;
    }
+
+   private async Task<string[]?> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 
+      string? type = null, int start = 0, int count = 20, string regionalRouting = RegionalRouting.America)
+   {
+      var url = $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/by-puuid/{puuid}?start={start}&count={count}";
+
+      if (queue > 0)
+      {
+         url += $"&queue={queue}";
+      }
+
+      if (!string.IsNullOrEmpty(type))
+      {
+         url += $"&type={type}";
+      }
+
+      if (startTime > 0)
+      {
+         url += $"&startTime={startTime}";
+      }
+      if (endTime> 0)
+      {
+         url += $"&endTime={endTime}";
+      }
+      var result = await GetAsync(url);
+      if (result is not { IsSuccessStatusCode: true }) return null;
+
+      string[]? ids = null;
+      try
+      {
+         ids = await JsonSerializer.DeserializeAsync<string[]>(await result.Content.ReadAsStreamAsync());
+      }
+      catch
+      {
+         Logger.LogError($"Failed to deserialise match IDs");
+      }
+      return ids is { Length: > 0 } ? ids : null;
+   }
+
+   private async void GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe)
+   {
+      
+      
+   }
    
    
    private async void OnRateLimit(object? sender, RateLimitArgs args)
