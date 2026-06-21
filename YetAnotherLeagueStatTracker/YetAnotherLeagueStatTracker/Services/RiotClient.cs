@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using YetAnotherLeagueStatTracker.Data;
 using YetAnotherLeagueStatTracker.Data.LeagueModels;
 using YetAnotherLeagueStatTracker.Services.Models;
+using YetAnotherLeagueStatTracker.Services.Models.MatchHistory;
 
 namespace YetAnotherLeagueStatTracker.Services;
 
@@ -81,6 +82,25 @@ public class RiotClient : IRiotClient
       if (x is not { IsSuccessStatusCode: true }) return null;
       return await JsonSerializer.DeserializeAsync<SummonerDto>(await x.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
    }
+
+   private async Task<SummonerModel?> SummonerModelByPuuid(string puuid, string platformRouting)
+   {
+      var accountDto = await  AccountDtoByPuuid(puuid);
+      if (accountDto == null) return null;
+      var summonerDto = await SummonerDtoByPuuid(puuid, platformRouting);
+      if (summonerDto == null) return null;
+      var summonerModel = new SummonerModel()
+      {
+         GameName = accountDto.GameName,
+         TagLine = accountDto.TagLine,
+         Puuid = accountDto.Puuid,
+         Region = platformRouting.ToLowerInvariant(),
+         RevisionDate = summonerDto.RevisionDate,
+         SummonerLevel = summonerDto.SummonerLevel,
+         ProfileIconId = summonerDto.ProfileIconId,
+      };
+      return summonerModel;  
+   }
    
    private async Task<SummonerModel?> SummonerModelByRiotId(string gameName, string tagLine, string platformRouting, bool skip = false)
    {
@@ -101,7 +121,7 @@ public class RiotClient : IRiotClient
       };
       return summonerModel;
    }
-
+   
    private async Task<AccountDto?> AccountDtoByPuuid(string puuid, string regionalRouting = RegionalRouting.Europe)
    {
       var url = $"https://{regionalRouting}.{ApiUrl}/riot/account/v1/accounts/by-puuid/{puuid}";
@@ -191,24 +211,39 @@ public class RiotClient : IRiotClient
 
       await UpdateSummonerRankByPuuid(summonerModel.Puuid);
       
+      var ids = await MatchIdsByPuuid(summonerModel.Puuid);
+      if (ids == null) return summonerModel;
+      foreach (var id in ids)
+      {
+         try
+         {
+            var x = await GetMatchById(id);
+         }
+         catch (Exception e)
+         {
+            Logger.LogError($"{e}");
+         }
+      }
+
+
       return summonerModel;
    }
-   
-   
-   public async Task<SummonerModel?> SummonerByRiotId(string gameName, string tagLine, string regionalRouting = PlatformRouting.EuW)
+
+   public async Task<SummonerModel?> SummonerByPuuid(string puuid, string regionalRouting = PlatformRouting.EuW, ApplicationDbContext? context = null)
    {
-      if (!PlatformRouting.IsValid(regionalRouting)) return null;
-      await using var db = await _scopeFactory.CreateDbContextAsync();
-      // We must hit the API to get PUUIDs because unicode characters can fuck everything up, e.g. "Αrt The Clοwn-EUW"
-      // Which uses non-ascii characters
-      var dto = await AccountDtoByRiotId(gameName, tagLine);
-      if (dto == null) return null;
-      var account = await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == dto.Puuid);
+      bool dispose = false;
+      if (context == null)
+      {
+         dispose = true;
+         context = await _scopeFactory.CreateDbContextAsync();
+      }
+      
+      var account = await context.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid);
       
       // Get and save account to DB
       if (account != null)
       {
-         var ranked = db.SummonerRanks.Where(x => x.Summoner == account);
+         var ranked = context.SummonerRanks.Where(x => x.Summoner == account);
          
          if (ranked.Any())
          {
@@ -225,31 +260,44 @@ public class RiotClient : IRiotClient
 
          return account;
       }
-      Logger.LogInformation($"{gameName}#{tagLine} ({regionalRouting}) was not found, pulling from API");
-      var model = await SummonerModelByRiotId(gameName, tagLine, regionalRouting);
+      Logger.LogInformation($"{puuid} ({regionalRouting}) was not found, pulling from API");
+      var model = await SummonerModelByPuuid(puuid, regionalRouting);
       if (model == null) return null;
       
       // Saving summoner 
       // Summoners can change names or tags, so we want to check if the Puuid exists already, then update the original
-      if (await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == model.Puuid) is { } summoner)
+      if (await context.Summoners.SingleOrDefaultAsync(x => x.Puuid == model.Puuid) is { } summoner)
       {
          model.Id = summoner.Id;
-         db.Entry(summoner).CurrentValues.SetValues(model);
+         context.Entry(summoner).CurrentValues.SetValues(model);
       }
       else
       {
-         await db.Summoners.AddAsync(model);
+         await context.Summoners.AddAsync(model);
       }
       
-      await db.SaveChangesAsync();
+      await context.SaveChangesAsync();
       await UpdateSummonerRankByPuuid(model.Puuid);
+      
+      if (dispose) await context.DisposeAsync();
       return model;
+   }
+   
+   public async Task<SummonerModel?> SummonerByRiotId(string gameName, string tagLine, string regionalRouting = PlatformRouting.EuW)
+   {
+      if (!PlatformRouting.IsValid(regionalRouting.ToLowerInvariant())) return null;
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+      // We must hit the API to get PUUIDs because Unicode characters can fuck everything up, e.g. "Αrt The Clοwn-EUW"
+      // Which uses non-ascii characters
+      var dto = await AccountDtoByRiotId(gameName, tagLine);
+      if (dto == null) return null;
+      return await SummonerByPuuid(dto.Puuid, regionalRouting);
    }
 
    private async Task<string[]?> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 
-      string? type = null, int start = 0, int count = 20, string regionalRouting = RegionalRouting.America)
+      string? type = null, int start = 0, int count = 5, string regionalRouting = RegionalRouting.Europe)
    {
-      var url = $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/by-puuid/{puuid}?start={start}&count={count}";
+      var url = $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}";
 
       if (queue > 0)
       {
@@ -284,10 +332,115 @@ public class RiotClient : IRiotClient
       return ids is { Length: > 0 } ? ids : null;
    }
 
-   private async void GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe)
+   private async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe, ApplicationDbContext? db = null)
    {
+      bool dispose = false;
+      if (db == null)
+      {
+         dispose = true;
+         db = await _scopeFactory.CreateDbContextAsync();
+      } 
+
+      var match = await db.Matches.SingleOrDefaultAsync(x => x.MatchId == matchId);
+      if (match != null) return match;
       
+      var uri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{matchId}";
+      var result = await GetAsync(uri);
+      if (result is not { IsSuccessStatusCode: true }) return null;
+      var matchDto = await JsonSerializer.DeserializeAsync<MatchDto>(await result.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+      if (matchDto == null) return null;
+
+     
+      match = new MatchModel()
+      {
+         DataVersion = matchDto.Metadata.DataVersion,
+         MatchId =  matchDto.Metadata.MatchId,
+         EndOfGameResult = matchDto.Info.EndOfGameResult,
+         GameMode =  matchDto.Info.GameMode,
+         GameName =  matchDto.Info.GameName,
+         GameType =   matchDto.Info.GameType,
+         GameVersion =   matchDto.Info.GameVersion,
+         PlatformId =   matchDto.Info.PlatformId,
+         GameCreation =  matchDto.Info.GameCreation,
+         GameDuration =   matchDto.Info.GameDuration,
+         GameEndTimestamp =   matchDto.Info.GameEndTimestamp,
+         GameId =   matchDto.Info.GameId,
+         GameStartTimestamp =    matchDto.Info.GameStartTimestamp,
+         MapId =    matchDto.Info.MapId,
+         QueueId =     matchDto.Info.QueueId,
+         TournamentCode =   matchDto.Info.TournamentCode,
+      };
       
+      foreach (var participant in matchDto.Info.Participants)
+      {
+         int mainRune = 0, subRune = 0;
+
+         foreach (var perk in participant.Perks.Styles)
+         {
+            if (perk.Description == "primaryStyle")
+            {
+               mainRune = perk.Selections[0].Perk;
+            }
+            else if (perk.Description == "subStyle")
+            {
+               subRune = perk.Selections[0].Perk;
+            }
+         }
+         
+         var summoner = await SummonerByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant(), db);
+         
+         var model = new MatchParticipant()
+         {
+            Assists =  participant.Assists,
+            Kills =  participant.Kills,
+            Deaths =  participant.Deaths,
+            ChampionName =  participant.ChampionName,
+            Match = match,
+            Summoner = summoner!,
+            TeamPosition = participant.TeamPosition,
+            ChampionId =  participant.ChampionId,
+            ChampionLevel = participant.ChampLevel,
+            ChampionTransform =  participant.ChampionTransform,
+            DamageDealtToBuildings =  participant.DamageDealtToBuildings,
+            DamageDealtToObjectives =  participant.DamageDealtToObjectives,
+            DamageSelfMitigated =   participant.DamageSelfMitigated,
+            FirstBlood = participant.FirstBloodKill,
+            FirstTowerKill =  participant.FirstTowerKill,
+            GoldEarned =   participant.GoldEarned,
+            Item0 =    participant.Item0,
+            Item1 =   participant.Item1,
+            Item2 =   participant.Item2,
+            Item3 =   participant.Item3,
+            Item4 =   participant.Item4,
+            Item5 =   participant.Item5,
+            Item6 =   participant.Item6,
+            LargestMultiKill =    participant.LargestMultiKill,
+            MagicDamageDealtToChampions =    participant.MagicDamageDealtToChampions,
+            MainRune = mainRune,
+            SubRune = subRune,
+            PhysicalDamageDealtToChampions =     participant.PhysicalDamageDealtToChampions,
+            Placement =  participant.Placement,
+            PlayerAugment1 =  participant.PlayerAugment1,
+            PlayerAugment2 = participant.PlayerAugment2,
+            PlayerAugment3 = participant.PlayerAugment3,
+            PlayerAugment4 = participant.PlayerAugment4,
+            PlayerSubteamId =   participant.PlayerSubteamId,
+            SubteamPlacement =   participant.SubteamPlacement,
+            Summoner1Id =    participant.Summoner1Id,
+            Summoner2Id =    participant.Summoner2Id,
+            TeamId =  participant.TeamId,
+            TotalDamageTaken =   participant.TotalDamageTaken,
+            TrueDamageDealtToChampions =    participant.TrueDamageDealtToChampions,
+            VisionScore =       participant.VisionScore,
+            Win =  participant.Win,
+         };
+         await db.MatchParticipants.AddAsync(model);
+      }
+
+      await db.Matches.AddAsync(match);
+      await db.SaveChangesAsync();
+      if (dispose) await db.DisposeAsync();
+      return match;
    }
    
    

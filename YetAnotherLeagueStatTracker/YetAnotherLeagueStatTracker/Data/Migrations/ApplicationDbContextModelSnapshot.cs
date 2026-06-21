@@ -231,6 +231,216 @@ namespace YetAnotherLeagueStatTracker.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.MatchModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DataVersion")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EndOfGameResult")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("GameCreation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("GameDuration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("GameEndTimestamp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GameMode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GameName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("GameStartTimestamp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GameType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GameVersion")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MapId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MatchId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlatformId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("QueueId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TournamentCode")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Matches");
+                });
+
+            modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.MatchParticipant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Assists")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChampionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChampionLevel")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ChampionName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ChampionTransform")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DamageDealtToBuildings")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DamageDealtToObjectives")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DamageSelfMitigated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Deaths")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("FirstBlood")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("FirstTowerKill")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("GoldEarned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item0")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item1")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item2")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item3")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item4")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item5")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Item6")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kills")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LargestMultiKill")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MagicDamageDealtToChampions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MainRune")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MatchId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PhysicalDamageDealtToChampions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Placement")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerAugment1")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerAugment2")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerAugment3")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerAugment4")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerSubteamId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SubRune")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SubteamPlacement")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Summoner1Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Summoner2Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SummonerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TeamPosition")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TotalDamageTaken")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TrueDamageDealtToChampions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("VisionScore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Win")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MatchId");
+
+                    b.HasIndex("SummonerId");
+
+                    b.ToTable("MatchParticipants");
+                });
+
             modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.RankedModel", b =>
                 {
                     b.Property<int>("Id")
@@ -406,6 +616,25 @@ namespace YetAnotherLeagueStatTracker.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.MatchParticipant", b =>
+                {
+                    b.HasOne("YetAnotherLeagueStatTracker.Data.LeagueModels.MatchModel", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YetAnotherLeagueStatTracker.Data.LeagueModels.SummonerModel", "Summoner")
+                        .WithMany()
+                        .HasForeignKey("SummonerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Match");
+
+                    b.Navigation("Summoner");
                 });
 
             modelBuilder.Entity("YetAnotherLeagueStatTracker.Data.LeagueModels.RankedModel", b =>

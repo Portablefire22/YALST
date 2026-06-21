@@ -2,8 +2,8 @@
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
-<div class="search-box">
-    <InputSelect @bind-Value="@Region" TValue="string" >
+<div class="search-box" onload="onLoad()">
+    <InputSelect @bind-Value="@Region" TValue="string" id="region">
         <option value="br1">BR1</option>
         <option value="eun1">EUN1</option>
         <option value="euw1" selected="true">EUW1</option>

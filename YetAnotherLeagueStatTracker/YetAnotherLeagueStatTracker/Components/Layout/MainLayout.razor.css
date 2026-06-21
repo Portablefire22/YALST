@@ -6,6 +6,11 @@
     margin: 0;
 }
 
+.user-link {
+    position: absolute;
+    right: 1.5em;
+}
+
 main {
     flex: 1;
 }
@@ -16,7 +21,7 @@ main {
 
 .footbar {
     position: absolute;
-    overflow: hidden;
+    overflow: hiddenSpace Station 14;
     bottom: 0;
     width: 100%;
     min-height: 2em;

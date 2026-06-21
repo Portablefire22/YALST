@@ -19,6 +19,7 @@
     {
         var summoner = await RiotClient.UpdateSummoner(Puuid);
         if (summoner == null) return;
+        Console.WriteLine($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}");
         NavigationManager.NavigateTo($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}", true);
     }
 }
