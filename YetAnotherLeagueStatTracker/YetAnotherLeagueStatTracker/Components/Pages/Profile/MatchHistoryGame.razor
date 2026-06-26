@@ -11,7 +11,7 @@
             <p id="@(Game.ProfileOwner.Win? "victory" : "defeat")">@WinText</p>
         </div>
         <div class="match-extra-info">
-            <p>@(LeagueGamemode.GetTranslation(Game.Match.GameMode))</p>
+            <p>@(DataDragon.GetQueueDescription(Game.Match.QueueId) ?? Game.Match.QueueId.ToString())</p>
             <p>@((GameEnd - GameStart).ToString(@"mm\:ss"))</p>
         </div>
     </div>
