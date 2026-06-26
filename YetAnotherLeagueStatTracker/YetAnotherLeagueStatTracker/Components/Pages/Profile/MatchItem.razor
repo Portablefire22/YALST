@@ -1,0 +1,14 @@
+
+<div class="match-item">
+    @if (ItemId > 0)
+    {
+        <img src="https://ddragon.leagueoflegends.com/cdn/@Version/img/item/@(ItemId).png"/>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int ItemId { get; set; }
+    [Parameter]
+    public required string Version { get; set; }
+}

@@ -211,7 +211,7 @@ public class RiotClient : IRiotClient
 
       await UpdateSummonerRankByPuuid(summonerModel.Puuid);
       
-      var ids = await MatchIdsByPuuid(summonerModel.Puuid);
+      var ids = await MatchIdsByPuuid(summonerModel.Puuid, count: 20);
       if (ids == null) return summonerModel;
       foreach (var id in ids)
       {
@@ -229,7 +229,7 @@ public class RiotClient : IRiotClient
       return summonerModel;
    }
 
-   public async Task<SummonerModel?> SummonerByPuuid(string puuid, string regionalRouting = PlatformRouting.EuW, ApplicationDbContext? context = null)
+   public async Task<SummonerModel?> SummonerByPuuid(string puuid, string platformRouting = PlatformRouting.EuW, ApplicationDbContext? context = null)
    {
       bool dispose = false;
       if (context == null)
@@ -260,8 +260,8 @@ public class RiotClient : IRiotClient
 
          return account;
       }
-      Logger.LogInformation($"{puuid} ({regionalRouting}) was not found, pulling from API");
-      var model = await SummonerModelByPuuid(puuid, regionalRouting);
+      Logger.LogInformation($"{puuid} ({platformRouting}) was not found, pulling from API");
+      var model = await SummonerModelByPuuid(puuid, platformRouting);
       if (model == null) return null;
       
       // Saving summoner 
@@ -373,6 +373,9 @@ public class RiotClient : IRiotClient
       
       foreach (var participant in matchDto.Info.Participants)
       {
+         var tmp = await db.MatchParticipants.SingleOrDefaultAsync(x =>
+            x.Match.Id == match.Id && x.Summoner.Puuid == participant.Puuid);
+         if (tmp != null) continue;
          int mainRune = 0, subRune = 0;
 
          foreach (var perk in participant.Perks.Styles)
@@ -442,7 +445,6 @@ public class RiotClient : IRiotClient
       if (dispose) await db.DisposeAsync();
       return match;
    }
-   
    
    private async void OnRateLimit(object? sender, RateLimitArgs args)
    {

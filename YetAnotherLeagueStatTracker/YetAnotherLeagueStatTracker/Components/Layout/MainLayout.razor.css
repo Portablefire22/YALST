@@ -20,8 +20,8 @@ main {
 }
 
 .footbar {
-    position: absolute;
-    overflow: hiddenSpace Station 14;
+    position: fixed;
+    overflow: hidden;
     bottom: 0;
     width: 100%;
     min-height: 2em;
@@ -34,6 +34,27 @@ main {
 }
 
 .footbar p {
+    margin: 0;
+    font-weight: bold;
+}
+
+
+.footbar-hidden {
+    position: relative;
+    overflow: hidden;
+    bottom: 0;
+    width: 100%;
+    min-height: 2em;
+    display: flex;
+    padding: 0.5em;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    background-color: #f5a9b8;
+    opacity: 0;
+}
+
+.footbar-hidden p {
     margin: 0;
     font-weight: bold;
 }

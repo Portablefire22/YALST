@@ -1,10 +1,11 @@
 ﻿@page "/Profile/{Region}/{GameName}-{Tag}"
 @using Microsoft.EntityFrameworkCore.Query.Internal
+@using YetAnotherLeagueStatTracker.Data
 @using YetAnotherLeagueStatTracker.Data.LeagueModels
 @using YetAnotherLeagueStatTracker.Services
 @inject RiotClient RiotClient
 @inject NavigationManager NavigationManager
-
+@inject ApplicationDbContext DbContext
 
 @if (Summoner != null)
 {
@@ -27,6 +28,7 @@
     public RankedModel? Rank { get; set; }
     
     private SummonerModel? Summoner { get; set; } = null;
+    
 
     protected override async Task OnInitializedAsync()
     {
@@ -44,8 +46,6 @@
             { Length: 1 } => models[0],
             _ => Rank
         };
-
         StateHasChanged();
     }
-
 }

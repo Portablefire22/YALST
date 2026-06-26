@@ -1,5 +1,19 @@
-﻿<div class="match-history">
-    <p>h</p> 
+﻿@using Microsoft.EntityFrameworkCore
+@using YetAnotherLeagueStatTracker.Data
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@using YetAnotherLeagueStatTracker.Services
+@inject RiotClient RiotClient
+@inject ApplicationDbContext DbContext
+
+<div class="match-history">
+
+    @if (History != null)
+    {
+        @foreach (var game in History)
+        {
+            <MatchHistoryGame Game="@game"></MatchHistoryGame>
+        }
+    }
 </div>
 
 
@@ -8,4 +22,56 @@
     public required string Puuid { get; set; }
     [Parameter]
     public required string Region { get; set; }
+
+    private SummonerModel? Summoner { get; set; } = null;
+
+    private ProfileMatch[]? History { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        Summoner = await RiotClient.SummonerByPuuid(Puuid, Region);
+        if (Summoner == null)
+        {
+            return;
+        }
+        var games = DbContext.MatchParticipants.Where(x => x.Summoner.Id == Summoner.Id).Select(y => y.Match).OrderByDescending(x => x.GameCreation);
+
+        
+        var hist = new List<ProfileMatch>();
+        foreach (var game in games)
+        {
+            var tmpParticipants = DbContext.MatchParticipants.Where(x => x.Match.Id == game.Id);
+
+            var teams = new Dictionary<int, List<MatchParticipant>>();
+
+            foreach (var participant in tmpParticipants)
+            {
+                if (participant.PlayerSubteamId == 0)
+                {
+                    if (!teams.ContainsKey(participant.TeamId)) teams.Add(participant.TeamId, []);
+                    teams[participant.TeamId].Add(participant);
+                }
+                else
+                {
+                    if (!teams.ContainsKey(participant.PlayerSubteamId)) teams.Add(participant.PlayerSubteamId, []);
+                    teams[participant.PlayerSubteamId].Add(participant);
+                }
+            }
+            var m = new ProfileMatch()
+            {
+                Match = game,
+                ProfileOwner = await DbContext.MatchParticipants.Include(matchParticipant => matchParticipant.Summoner).SingleAsync(x => x.Match.Id == game.Id && x.Summoner.Id == Summoner.Id),
+                ParticipantsByTeam = teams
+            };
+            hist.Add(m);
+        }
+        History = hist.ToArray();
+        StateHasChanged();
+    }
+
+    public class ProfileMatch
+    {
+        public MatchModel Match { get; set; }
+        public MatchParticipant ProfileOwner { get; set; }
+        public Dictionary<int, List<MatchParticipant>> ParticipantsByTeam { get; set; } = [];
+    }
 }

@@ -1,0 +1,81 @@
+
+.match-history-game {
+    border-radius: 1em;
+    background-color: white;
+    margin: 0.5em 1em 0.5em 1em;
+    padding: 1em;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.match-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+}
+
+.match-quick-info {
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-self: center;
+}
+
+.match-quick-info img {
+    height: 115%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+.match-quick-info .image-container {
+    width: 5em;
+    aspect-ratio: 1/1;
+    border-radius: 1em;
+    overflow: hidden;
+}
+
+.match-quick-info p {
+    margin: 0;
+}
+
+.match-extra-info {
+    margin: 0 0 0 1em;
+    line-height: 0.25em;
+    text-align: center;
+}
+
+.match-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: fit-content;
+}
+
+small {
+    color: #a0a0a0;
+}
+
+.match-kda {
+    line-height: 0;
+    text-align: center;
+}
+
+#victory { 
+    color: #79db70;
+}
+
+#defeat {
+    color: #db6b63;
+}
+
+.match-inventory {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
