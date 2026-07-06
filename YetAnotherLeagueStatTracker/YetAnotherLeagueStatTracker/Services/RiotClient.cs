@@ -130,9 +130,14 @@ public class RiotClient : IRiotClient
       return await JsonSerializer.DeserializeAsync<AccountDto>(await x.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
    }
 
-   private async Task<RankedModel[]?> UpdateSummonerRankByPuuid(string puuid)
+   private async Task<RankedModel[]?> UpdateSummonerRankByPuuid(string puuid, ApplicationDbContext? db = null)
    {
-      await using var db = await _scopeFactory.CreateDbContextAsync();
+      bool dispose = false;
+      if (db == null)
+      {
+         dispose = true;
+         db = await _scopeFactory.CreateDbContextAsync();
+      }
       var summoner = await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid);
       if (summoner == null) return null;
 
@@ -165,6 +170,9 @@ public class RiotClient : IRiotClient
       db.Update(summoner);
       summoner.RankedModels = models;
       await db.SaveChangesAsync();
+      
+      if(dispose) await db.DisposeAsync();
+      
       return models.ToArray();
    }
 
@@ -277,7 +285,7 @@ public class RiotClient : IRiotClient
       }
       
       await context.SaveChangesAsync();
-      await UpdateSummonerRankByPuuid(model.Puuid);
+      await UpdateSummonerRankByPuuid(model.Puuid, context);
       
       if (dispose) await context.DisposeAsync();
       return model;
@@ -332,7 +340,7 @@ public class RiotClient : IRiotClient
       return ids is { Length: > 0 } ? ids : null;
    }
 
-   private async Task UpdateMatchParticipants(MatchModel match, string regionalRouting, ApplicationDbContext? db = null)
+   public async Task UpdateMatchParticipants(MatchModel match, string regionalRouting, ApplicationDbContext? db = null)
    {
       bool dispose = false;
       if (db == null)
@@ -423,7 +431,7 @@ public class RiotClient : IRiotClient
       }
    }
    
-   private async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe, ApplicationDbContext? db = null)
+   public async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe, ApplicationDbContext? db = null)
    {
       bool dispose = false;
       if (db == null)

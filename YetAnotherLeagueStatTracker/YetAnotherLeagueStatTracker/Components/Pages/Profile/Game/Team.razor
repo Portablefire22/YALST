@@ -3,7 +3,7 @@
 
 @foreach (var (id, team) in Participants)
 {
-    <div class="team-col">
+    <div class="team-col" id="@(team.First().Win? "Victory": "Defeat")">
         @foreach (var participant in team)
         {
             <GameParticipant Participant="participant" IsProfileOwner="@(participant == ProfileOwner)"/>

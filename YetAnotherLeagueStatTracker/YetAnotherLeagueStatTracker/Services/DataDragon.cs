@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using YetAnotherLeagueStatTracker.Services.Models;
 
 namespace YetAnotherLeagueStatTracker.Services;
 
@@ -11,12 +12,15 @@ public class DataDragon
     private Dictionary<int, GameQueue> Queues = [];
     
     private ILogger Logger { get; }
-    
+
+
+    public static Dictionary<string, SummonerSpellDto> _summonerSpells = new Dictionary<string, SummonerSpellDto>();
     
     private static Dictionary<string, string> _queueTranslation = new Dictionary<string, string>()
     {
         {"5V5 RANKED FLEX GAMES", "Ranked Flex" },
-        {"5V5 RANKED SOLO GAMES", "Ranked Solo"}
+        {"5V5 RANKED SOLO GAMES", "Ranked Solo"},
+        {"5V5 DRAFT PICK GAMES", "Normal Draft"}
     };
 
     private static Dictionary<int, string> _cherryTeams = new Dictionary<int, string>()
@@ -78,6 +82,21 @@ public class DataDragon
         {
             Queues.TryAdd(queue.QueueId, queue);
         }
+
+        var spells = await x.GetFromJsonAsync<SummonerSpellsDto>(
+            $"https://ddragon.leagueoflegends.com/cdn/{Version}/data/en_US/summoner.json",
+            new JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            });
+        if (spells == null) return;
+        
+        _summonerSpells.Clear();
+        foreach (var spell in spells.Data)
+        {
+            _summonerSpells.TryAdd(spell.Value.Key, spell.Value);
+        }
+
     }
 
     public string? GetSubTeamName(int subteamId)
@@ -97,6 +116,12 @@ public class DataDragon
         var queue = GetQueue(queueId);
         if (queue == null) return null;
         return _queueTranslation.TryGetValue(queue.Description.ToUpperInvariant(), out string? description) ? description : queue.Description;
+    }
+
+    public string? GetSummonerSpellFromId(string id)
+    {
+        _summonerSpells.TryGetValue(id, out var spell);
+        return spell?.GetImageUrl(Version);
     }
 }
 
