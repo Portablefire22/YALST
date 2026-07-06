@@ -211,13 +211,13 @@ public class RiotClient : IRiotClient
 
       await UpdateSummonerRankByPuuid(summonerModel.Puuid);
       
-      var ids = await MatchIdsByPuuid(summonerModel.Puuid, count: 20);
+      var ids = await MatchIdsByPuuid(summonerModel.Puuid, platformRouting: summonerModel.Region ,count: 20);
       if (ids == null) return summonerModel;
       foreach (var id in ids)
       {
          try
          {
-            var x = await GetMatchById(id);
+            var x = await GetMatchById(id, regionalRouting: RegionalRouting.FromRegion(summonerModel.Region));
          }
          catch (Exception e)
          {
@@ -283,21 +283,21 @@ public class RiotClient : IRiotClient
       return model;
    }
    
-   public async Task<SummonerModel?> SummonerByRiotId(string gameName, string tagLine, string regionalRouting = PlatformRouting.EuW)
+   public async Task<SummonerModel?> SummonerByRiotId(string gameName, string tagLine, string platformRouting = PlatformRouting.EuW)
    {
-      if (!PlatformRouting.IsValid(regionalRouting.ToLowerInvariant())) return null;
+      if (!PlatformRouting.IsValid(platformRouting.ToLowerInvariant())) return null;
       await using var db = await _scopeFactory.CreateDbContextAsync();
       // We must hit the API to get PUUIDs because Unicode characters can fuck everything up, e.g. "Αrt The Clοwn-EUW"
       // Which uses non-ascii characters
       var dto = await AccountDtoByRiotId(gameName, tagLine);
       if (dto == null) return null;
-      return await SummonerByPuuid(dto.Puuid, regionalRouting);
+      return await SummonerByPuuid(dto.Puuid, platformRouting);
    }
 
    private async Task<string[]?> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 
-      string? type = null, int start = 0, int count = 5, string regionalRouting = RegionalRouting.Europe)
+      string? type = null, int start = 0, int count = 5, string platformRouting = PlatformRouting.EuW)
    {
-      var url = $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}";
+      var url = $"https://{RegionalRouting.FromRegion(platformRouting)}.{ApiUrl}/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}";
 
       if (queue > 0)
       {

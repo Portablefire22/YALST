@@ -1,3 +1,4 @@
+@using System.Diagnostics
 @using YetAnotherLeagueStatTracker.Data
 @using YetAnotherLeagueStatTracker.Services
 @inject DataDragon DataDragon
@@ -6,7 +7,7 @@
     <div class="match-info">
         <div class="match-quick-info">
             <div class="image-container">
-                <img src="https://cdn.communitydragon.org/@Version/champion/@Game.ProfileOwner.ChampionId/square"/>
+                <img src="@ChampIcon"/>
             </div>
             <p id="@(Game.ProfileOwner.Win? "victory" : "defeat")">@WinText</p>
         </div>
@@ -37,6 +38,8 @@
     [Parameter]
     public required MatchHistory.ProfileMatch Game { get; set; }
 
+    public string ChampIcon = "";
+    
     public DateTimeOffset GameStart { get; set; } 
     public DateTimeOffset GameEnd { get; set; } 
     
@@ -55,8 +58,10 @@
 
     protected override void OnInitialized()
     {
+
         GameStart = DateTimeOffset.FromUnixTimeMilliseconds(Game.Match.GameStartTimestamp);
         GameEnd = DateTimeOffset.FromUnixTimeMilliseconds(Game.Match.GameEndTimestamp);
+        StateHasChanged();
     }
 
 
@@ -64,6 +69,19 @@
     {
         Version = await DataDragon.GetVersion();
         
+        if (Game.ProfileOwner.ChampionId == 141)
+        {
+            ChampIcon = Game.ProfileOwner.ChampionTransform switch
+            {
+                0 => $"https://cdn.communitydragon.org/{Version}/champion/{Game.ProfileOwner.ChampionId}/square",
+                1 => $"https://raw.communitydragon.org/latest/game/assets/characters/kayn/hud/kayn_slay_square.png",
+                2 => $"https://raw.communitydragon.org/latest/game/assets/characters/kayn/hud/kayn_ass_square.png",
+            };
+        }
+        else
+        {
+            ChampIcon = $"https://cdn.communitydragon.org/{Version}/champion/{Game.ProfileOwner.ChampionId}/square";
+        }
         
         StateHasChanged();
     }

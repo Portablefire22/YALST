@@ -1,5 +1,6 @@
 ﻿@using YetAnotherLeagueStatTracker.Services
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
 
 <div class="search-box" onload="onLoad()">
@@ -25,26 +26,37 @@
     <button class="btn-primary btn" onclick="@Search">Go</button>
 </div>
 
+<script src="script1.js"></script>
+
 @code {
     private ElementReference SelectBox { get; set; }
     private string Name { get; set; } = "";
 
     private string Region { get; set; } = "euw1";
 
-    public void Enter(KeyboardEventArgs e)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await JsRuntime.InvokeAsync<IJSObjectReference>("loadRegion", "script1.js");
+        }
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            Search();
+            await Search();
         }
     }
     
-    public void Search()
+    public async Task Search()
     {
         if (!PlatformRouting.IsValid(Region) || string.IsNullOrEmpty(Name)) return;
 
         var splits = Name.Split("#");
         if (splits.Length != 2) return;
+        var module = await JsRuntime.InvokeAsync<IJSObjectReference>("saveCurrentRegion", "script1.js");
         NavigationManager.NavigateTo($"/profile/{Region}/{splits[0]}-{splits[1]}");
     }
 }

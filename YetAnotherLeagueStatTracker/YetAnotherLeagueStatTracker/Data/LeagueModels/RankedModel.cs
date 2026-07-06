@@ -71,6 +71,6 @@ public enum Tier
     Emerald,
     Diamond,
     Master,
-    GrandMaster,
+    Grandmaster,
     Challenger
 }
