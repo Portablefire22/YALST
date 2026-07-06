@@ -35,7 +35,6 @@
             return;
         }
         var games = DbContext.MatchParticipants.Where(x => x.Summoner.Id == Summoner.Id).Select(y => y.Match).OrderByDescending(x => x.GameCreation);
-
         
         var hist = new List<ProfileMatch>();
         foreach (var game in games)

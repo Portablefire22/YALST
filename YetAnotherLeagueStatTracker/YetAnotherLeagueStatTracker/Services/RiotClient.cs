@@ -332,6 +332,97 @@ public class RiotClient : IRiotClient
       return ids is { Length: > 0 } ? ids : null;
    }
 
+   private async Task UpdateMatchParticipants(MatchModel match, string regionalRouting, ApplicationDbContext? db = null)
+   {
+      bool dispose = false;
+      if (db == null)
+      {
+         dispose = true;
+         db = await _scopeFactory.CreateDbContextAsync();
+      } 
+      
+      var uri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{match.MatchId}";
+      var result = await GetAsync(uri);
+      if (result is not { IsSuccessStatusCode: true }) return;
+      var matchDto = await JsonSerializer.DeserializeAsync<MatchDto>(await result.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+      if (matchDto == null) return;
+
+      var currentParticipants = db.MatchParticipants.Where(x => x.Match == match);
+      foreach (var participant in matchDto.Info.Participants)
+      {
+         if (await currentParticipants.SingleOrDefaultAsync(x => x.Summoner.Puuid == participant.Puuid) != null) continue; 
+         
+          int mainRune = 0, subRune = 0;
+
+         foreach (var perk in participant.Perks.Styles)
+         {
+            if (perk.Description == "primaryStyle")
+            {
+               mainRune = perk.Selections[0].Perk;
+            }
+            else if (perk.Description == "subStyle")
+            {
+               subRune = perk.Selections[0].Perk;
+            }
+         }
+         
+         var summoner = await SummonerByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant(), db);
+         
+         var model = new MatchParticipant()
+         {
+            Assists =  participant.Assists,
+            Kills =  participant.Kills,
+            Deaths =  participant.Deaths,
+            ChampionName =  participant.ChampionName,
+            Match = match,
+            Summoner = summoner!,
+            TeamPosition = participant.TeamPosition,
+            ChampionId =  participant.ChampionId,
+            ChampionLevel = participant.ChampLevel,
+            ChampionTransform =  participant.ChampionTransform,
+            DamageDealtToBuildings =  participant.DamageDealtToBuildings,
+            DamageDealtToObjectives =  participant.DamageDealtToObjectives,
+            DamageSelfMitigated =   participant.DamageSelfMitigated,
+            FirstBlood = participant.FirstBloodKill,
+            FirstTowerKill =  participant.FirstTowerKill,
+            GoldEarned =   participant.GoldEarned,
+            Item0 =    participant.Item0,
+            Item1 =   participant.Item1,
+            Item2 =   participant.Item2,
+            Item3 =   participant.Item3,
+            Item4 =   participant.Item4,
+            Item5 =   participant.Item5,
+            Item6 =   participant.Item6,
+            LargestMultiKill =    participant.LargestMultiKill,
+            MagicDamageDealtToChampions =    participant.MagicDamageDealtToChampions,
+            MainRune = mainRune,
+            SubRune = subRune,
+            PhysicalDamageDealtToChampions =     participant.PhysicalDamageDealtToChampions,
+            Placement =  participant.Placement,
+            PlayerAugment1 =  participant.PlayerAugment1,
+            PlayerAugment2 = participant.PlayerAugment2,
+            PlayerAugment3 = participant.PlayerAugment3,
+            PlayerAugment4 = participant.PlayerAugment4,
+            PlayerSubteamId =   participant.PlayerSubteamId,
+            SubteamPlacement =   participant.SubteamPlacement,
+            Summoner1Id =    participant.Summoner1Id,
+            Summoner2Id =    participant.Summoner2Id,
+            TeamId =  participant.TeamId,
+            TotalDamageTaken =   participant.TotalDamageTaken,
+            TrueDamageDealtToChampions =    participant.TrueDamageDealtToChampions,
+            VisionScore =       participant.VisionScore,
+            Win =  participant.Win,
+         };
+         await db.MatchParticipants.AddAsync(model);
+      }
+      await db.SaveChangesAsync();
+
+      if (dispose)
+      {
+         await db.DisposeAsync();
+      }
+   }
+   
    private async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe, ApplicationDbContext? db = null)
    {
       bool dispose = false;
@@ -342,7 +433,29 @@ public class RiotClient : IRiotClient
       } 
 
       var match = await db.Matches.SingleOrDefaultAsync(x => x.MatchId == matchId);
-      if (match != null) return match;
+      if (match != null)
+      {
+         // If this is an old version without participant count, migrate it
+         if (match.ParticipantCount == 0)
+         { 
+            var tUri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{matchId}";
+            var tResult = await GetAsync(tUri);
+            if (tResult is not { IsSuccessStatusCode: true }) return null;
+            var tMatchDto = await JsonSerializer.DeserializeAsync<MatchDto>(await tResult.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+            if (tMatchDto == null) return null;
+            db.Update(match);
+            match.ParticipantCount = tMatchDto.Info.Participants.Length;
+            await db.SaveChangesAsync();
+         }
+        
+         // Sometimes API rate-limiting causes us to miss a few summoners, this helps reduce that issue
+         var part = db.MatchParticipants.Where(x => x.Match == match);
+         if (part.Count() < match.ParticipantCount)
+         {
+            await UpdateMatchParticipants(match, regionalRouting, db);
+         }
+         return match;
+      }
       
       var uri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{matchId}";
       var result = await GetAsync(uri);
@@ -359,6 +472,7 @@ public class RiotClient : IRiotClient
          GameMode =  matchDto.Info.GameMode,
          GameName =  matchDto.Info.GameName,
          GameType =   matchDto.Info.GameType,
+         ParticipantCount = matchDto.Info.Participants.Length,
          GameVersion =   matchDto.Info.GameVersion,
          PlatformId =   matchDto.Info.PlatformId,
          GameCreation =  matchDto.Info.GameCreation,

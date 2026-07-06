@@ -13,6 +13,8 @@ public class MatchModel
     public required string GameVersion { get; set; }
     public required string MatchId { get; set; }
     
+    public int ParticipantCount { get; set; }
+    
     public required string EndOfGameResult { get; set; }
     public long GameCreation { get; set; }
     public long GameDuration { get; set; }
