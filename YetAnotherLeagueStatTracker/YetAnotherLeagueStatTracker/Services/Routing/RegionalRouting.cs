@@ -14,7 +14,7 @@ public class RegionalRouting
 
    public static string FromRegion(string platform)
    {
-      return platform switch
+      return platform.ToLowerInvariant() switch
       {
          PlatformRouting.NorthAmerica => America,
          PlatformRouting.Brazil => America,
