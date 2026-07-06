@@ -1,0 +1,46 @@
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@using YetAnotherLeagueStatTracker.Services
+
+@inject DataDragon DataDragon
+
+<div class="team-participant">
+    <div class="image-container">
+        <img src="@ChampIcon"/>
+    </div>
+    <a href="/profile/@Participant.Summoner.Region/@Participant.Summoner.GameName-@Participant.Summoner.TagLine" id="@Id">@Participant.Summoner.GameName</a>
+</div>
+
+
+@code {
+    [Parameter]
+    public required MatchParticipant Participant { get; set; }
+    public string Version { get; set;  }= "";
+
+    private string Id => IsProfileOwner ? "ProfileOwner" : Participant.Summoner.GameName;
+    
+    [Parameter] public bool IsProfileOwner { get; set; } = false;
+    
+    private string ChampIcon = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Version = await DataDragon.GetVersion();
+        StateHasChanged();
+        if (Participant.ChampionId == 141)
+        {
+            ChampIcon = Participant.ChampionTransform switch
+            {
+                0 => $"https://cdn.communitydragon.org/{Version}/champion/{Participant.ChampionId}/square",
+                1 => $"https://raw.communitydragon.org/latest/game/assets/characters/kayn/hud/kayn_slay_square.png",
+                2 => $"https://raw.communitydragon.org/latest/game/assets/characters/kayn/hud/kayn_ass_square.png",
+            };
+        }
+        else
+        {
+            ChampIcon = $"https://cdn.communitydragon.org/{Version}/champion/{Participant.ChampionId}/square";
+        }
+        StateHasChanged();
+    }
+
+} 
+

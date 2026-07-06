@@ -32,6 +32,9 @@
         </div>
         <MatchItem Version="@Version" ItemId="@Game.ProfileOwner.Item6"/>
     </div>
+    
+    <GameParticipants Participants="Game.ParticipantsByTeam" ProfileOwner="@Game.ProfileOwner"/>
+    
 </div>
 
 @code {

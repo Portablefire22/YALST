@@ -1,0 +1,10 @@
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
+<h3>Subteam</h3>
+
+@code {
+    
+    [Parameter]
+    public required Dictionary<int, List<MatchParticipant>> Participants { get; set; }
+    [Parameter]
+    public required MatchParticipant ProfileOwner { get; set; }
+}

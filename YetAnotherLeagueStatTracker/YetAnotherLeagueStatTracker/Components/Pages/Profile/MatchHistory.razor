@@ -1,4 +1,5 @@
 ﻿@using Microsoft.EntityFrameworkCore
+@using YetAnotherLeagueStatTracker.Components.Pages.Profile.Game
 @using YetAnotherLeagueStatTracker.Data
 @using YetAnotherLeagueStatTracker.Data.LeagueModels
 @using YetAnotherLeagueStatTracker.Services
@@ -39,7 +40,7 @@
         var hist = new List<ProfileMatch>();
         foreach (var game in games)
         {
-            var tmpParticipants = DbContext.MatchParticipants.Where(x => x.Match.Id == game.Id);
+            var tmpParticipants = DbContext.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.Id == game.Id);
 
             var teams = new Dictionary<int, List<MatchParticipant>>();
 

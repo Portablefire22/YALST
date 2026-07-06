@@ -1,0 +1,19 @@
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
+
+
+@foreach (var (id, team) in Participants)
+{
+    <div class="team-col">
+        @foreach (var participant in team)
+        {
+            <GameParticipant Participant="participant" IsProfileOwner="@(participant == ProfileOwner)"/>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public required Dictionary<int, List<MatchParticipant>> Participants { get; set; }
+    [Parameter]
+    public required MatchParticipant ProfileOwner { get; set; }
+}
