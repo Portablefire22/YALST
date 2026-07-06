@@ -1,5 +1,3 @@
-@using System.Diagnostics
-@using YetAnotherLeagueStatTracker.Data
 @using YetAnotherLeagueStatTracker.Services
 @inject DataDragon DataDragon
 
@@ -12,12 +10,15 @@
             <p id="@(Game.ProfileOwner.Win? "victory" : "defeat")">@WinText</p>
         </div>
         <div class="spells">
-            <div class="spell-image">
-                <img src="@(DataDragon.GetSummonerSpellFromId(@Game.ProfileOwner.Summoner1Id.ToString()))"/>
-            </div>
-            <div class="spell-image">
-                <img src="@(DataDragon.GetSummonerSpellFromId(@Game.ProfileOwner.Summoner2Id.ToString()))"/>
-            </div>
+            <GameSpell SummonerId="Game.ProfileOwner.Summoner1Id"/>
+            <GameSpell SummonerId="Game.ProfileOwner.Summoner2Id"/>
+            @if (_doAugments)
+            {
+                <GameAugment Augment="@DataDragon.GetAugment(Game.ProfileOwner.PlayerAugment1)"/>
+                <GameAugment Augment="@DataDragon.GetAugment(Game.ProfileOwner.PlayerAugment2)"/>
+                <GameAugment Augment="@DataDragon.GetAugment(Game.ProfileOwner.PlayerAugment3)"/>
+                <GameAugment Augment="@DataDragon.GetAugment(Game.ProfileOwner.PlayerAugment4)"/>
+            }
         </div>
         <div class="match-extra-info">
             <p>@(DataDragon.GetQueueDescription(Game.Match.QueueId) ?? Game.Match.QueueId.ToString())</p>
@@ -54,6 +55,8 @@
     public DateTimeOffset GameStart { get; set; } 
     public DateTimeOffset GameEnd { get; set; } 
     
+    private bool _doAugments = false;
+    
     public float Kda
     {
         get
@@ -72,6 +75,7 @@
 
         GameStart = DateTimeOffset.FromUnixTimeMilliseconds(Game.Match.GameStartTimestamp);
         GameEnd = DateTimeOffset.FromUnixTimeMilliseconds(Game.Match.GameEndTimestamp);
+        _doAugments = Game.ProfileOwner.PlayerAugment1 != 0;
         StateHasChanged();
     }
 

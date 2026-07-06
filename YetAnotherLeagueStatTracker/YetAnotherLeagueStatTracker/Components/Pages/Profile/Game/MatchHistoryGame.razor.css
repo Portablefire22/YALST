@@ -83,25 +83,9 @@ small {
 
 .spells {
     align-items: center;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-auto-flow: column;
     margin: 0 0 1.5em 0;
-}
-
-.spell-image {
-    width: 2em;
-    aspect-ratio: 1/1;
-    border-radius: 0.5em;
-    overflow: hidden;
-    margin: 0.25em 0 0.25em 0.1em;
-}
-
-.spell-image img {
-    height: 115%;
-    aspect-ratio: 1/1;
-    object-fit: cover;
-    position: relative;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
+    width: 6.5em;
 }

@@ -1,0 +1,9 @@
+@using YetAnotherLeagueStatTracker.Services.Models
+<div class="augment-image">
+    <img src="@Augment?.GetSmallImageUrl()"/>
+</div>
+
+@code {
+    [Parameter]
+    public AugmentDto? Augment { get; set; }
+}

@@ -15,6 +15,8 @@ public class DataDragon
 
 
     public static Dictionary<string, SummonerSpellDto> _summonerSpells = new Dictionary<string, SummonerSpellDto>();
+
+    private static Dictionary<int, AugmentDto> _augments = [];
     
     private static Dictionary<string, string> _queueTranslation = new Dictionary<string, string>()
     {
@@ -97,6 +99,18 @@ public class DataDragon
             _summonerSpells.TryAdd(spell.Value.Key, spell.Value);
         }
 
+        var augs = await x.GetFromJsonAsync<AugmentsDto>(
+            $"https://raw.communitydragon.org/latest/cdragon/arena/en_us.json", new JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            });
+        if (augs == null) return;
+        
+        _augments.Clear();
+        foreach (var aug in augs.Augments)
+        {
+            _augments.TryAdd(aug.Id, aug);
+        }
     }
 
     public string? GetSubTeamName(int subteamId)
@@ -122,6 +136,12 @@ public class DataDragon
     {
         _summonerSpells.TryGetValue(id, out var spell);
         return spell?.GetImageUrl(Version);
+    }
+
+    public AugmentDto? GetAugment(int augmentId)
+    {
+        _augments.TryGetValue(augmentId, out var augment);
+        return augment;
     }
 }
 
