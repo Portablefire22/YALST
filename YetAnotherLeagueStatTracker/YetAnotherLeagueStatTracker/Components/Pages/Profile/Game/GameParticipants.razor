@@ -26,5 +26,10 @@
     {
         // Subteams start from 1, default 2 teams start at 100
         _doSubteams = !Participants.ContainsKey(100);
+        if (_doSubteams)
+        {
+            Participants = Participants.OrderBy(x => x.Value.First().SubteamPlacement).ToDictionary();
+        }
+        StateHasChanged();
     }
 }

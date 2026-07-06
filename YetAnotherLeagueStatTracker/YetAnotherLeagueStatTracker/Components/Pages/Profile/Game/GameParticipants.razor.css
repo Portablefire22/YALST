@@ -2,4 +2,7 @@
 .game-participants-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    width: 16em;
+    height: 9em;
+    overflow-y: auto;
 }

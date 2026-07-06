@@ -15,8 +15,18 @@ public class DataDragon
     
     private static Dictionary<string, string> _queueTranslation = new Dictionary<string, string>()
     {
-        {"5v5 RANKED FLEX GAMES", "Ranked Flex" },
+        {"5V5 RANKED FLEX GAMES", "Ranked Flex" },
         {"5V5 RANKED SOLO GAMES", "Ranked Solo"}
+    };
+
+    private static Dictionary<int, string> _cherryTeams = new Dictionary<int, string>()
+    {
+        {1, "Poros" },
+        {2, "Minions"},
+        {3, "Scuttles"},
+        {4, "Krugs"},
+        {5, "Raptor"},
+        {6, "Sentinel"}
     };
     
     
@@ -70,9 +80,15 @@ public class DataDragon
         }
     }
 
+    public string? GetSubTeamName(int subteamId)
+    {
+        _cherryTeams.TryGetValue(subteamId, out var teamName);
+        return teamName;
+    }
+    
     public GameQueue? GetQueue(int queueId)
     {
-        Queues.TryGetValue(queueId, out GameQueue? queue); 
+        Queues.TryGetValue(queueId, out var queue); 
         return queue;
     }
 
