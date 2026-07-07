@@ -1,6 +1,9 @@
 @using YetAnotherLeagueStatTracker.Services.Models
 <div class="augment-image">
-    <img src="@Augment?.GetSmallImageUrl()"/>
+    @if (Augment != null)
+    {
+        <img src="@Augment?.GetSmallImageUrl()"/>
+    }
 </div>
 
 @code {
