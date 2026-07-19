@@ -28,7 +28,12 @@
             <hr/>
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com"/>
+                <InputText @bind-Value="Input.Email" id="Input.Username" class="form-control" autocomplete="username" aria-required="true" placeholder="username"/>
+                <label for="Input.Username">Username</label>
+                <ValidationMessage For="() => Input.Username" class="text-danger"/>
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="email" aria-required="true" placeholder="name@example.com"/>
                 <label for="Input.Email">Email</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger"/>
             </div>
@@ -57,6 +62,8 @@
 @code {
     private IEnumerable<IdentityError>? identityErrors;
 
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    
     [SupplyParameterFromForm] private InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
@@ -68,11 +75,29 @@
         Input ??= new();
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserManager.GetUserAsync(HttpContext.User);
+        if (user is not null)
+        {
+            RedirectManager.RedirectTo("/");
+            return;
+        }
+    }
+
     public async Task RegisterUser(EditContext editContext)
     {
-        var user = CreateUser();
+        var user = await UserManager.GetUserAsync(HttpContext.User);
+        if (user is not null)
+        {
+            RedirectManager.RedirectTo("/");
+            return;
+        }
+        
+        
+        user = CreateUser();
 
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        await UserStore.SetUserNameAsync(user, Input.Username, CancellationToken.None);
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
         var result = await UserManager.CreateAsync(user, Input.Password);
@@ -132,6 +157,12 @@
 
     private sealed class InputModel
     {
+        [Required]
+        [StringLength(32, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 2)]
+        [DataType(DataType.Text)]
+        [Display(Name = "Username")]
+        public string Username { get; set; } = "";
+        
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
