@@ -1,0 +1,35 @@
+@inherits LayoutComponentBase
+@layout YetAnotherLeagueStatTracker.Components.Layout.MainLayout
+
+@inject NavigationManager NavManager
+
+<div class="profile-layout-container">
+    <div class="profile-nav">
+        <ul class="nav nav-pills flex-column">
+            <li class="nav-item">
+                <NavLink class="nav-link" href=@($"/profile/{Username}") Match="NavLinkMatch.All">Match History</NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href=@($"/profile/{Username}/Accounts")>Accounts</NavLink>
+            </li>
+        </ul>
+    </div>
+    <div class="col-lg-9">
+        @Body
+    </div>
+</div>
+
+@code {
+
+    private string Username { get; set; } = "";
+    
+    protected override void OnInitialized()
+    {
+        var url = NavManager.Uri;
+        var spl = url.Split("/profile/");
+        if (spl.Length <= 1) return;
+        Username = spl[1].Split("/")[0];
+        StateHasChanged();
+    }
+
+}

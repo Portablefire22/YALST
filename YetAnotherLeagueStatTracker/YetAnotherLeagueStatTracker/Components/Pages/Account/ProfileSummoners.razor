@@ -1,0 +1,144 @@
+@page "/Profile/{Username}/Accounts"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using YetAnotherLeagueStatTracker.Components.Account.Shared
+@using YetAnotherLeagueStatTracker.Data
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@using YetAnotherLeagueStatTracker.Services
+
+@inject NavigationManager NavManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApplicationDbContext DbContext
+
+@inject RiotClient RiotClient
+
+@rendermode InteractiveServer
+
+
+
+@foreach (var summoner in Summoners)
+{
+    <SummonerPreview Summoner="@summoner" EditMode="@Edit"/>
+}
+@if (CurrentUser == PageUser && CurrentUser != null)
+{
+    <EditForm Model="Input" method="post" OnValidSubmit="AddSummoner" class="wasr" FormName="add">
+        <DataAnnotationsValidator/>
+        <div class="wasr">
+        <InputSelect @bind-Value="@Input.Region" TValue="string" id="region">
+            <option value="br1">BR1</option>
+            <option value="eun1">EUN1</option>
+            <option value="euw1">EUW1</option>
+            <option value="jp1">JP1</option>
+            <option value="kr">KR</option>
+            <option value="la1">LA1</option>
+            <option value="la2">LA2</option>
+            <option value="na1">NA1</option>
+            <option value="oc1">OC1</option>
+            <option value="tr1">TR1</option>
+            <option value="ru">RU</option>
+            <option value="ph2">PH2</option>
+            <option value="sg2">SG2</option>
+            <option value="th2">TH2</option>
+            <option value="tw2">TW2</option>
+            <option value="vn2">VN2</option>
+        </InputSelect>
+        <InputText @bind-Value="Input.Combined" id="Input.Email" class="form-control" aria-required="true" placeholder="GameName#Tagline"/>
+        <button class="btn btn-primary" type="submit">Add</button>
+        <button class="btn btn-danger" @onclick="ToggleEdit">Edit</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    public List<SummonerModel> Summoners { get; set; } = [];
+
+    [Parameter]
+    public required string Username { get; set; }
+   
+    public ApplicationUser? PageUser { get; set; }
+    
+    private bool Edit { get; set; } = false;
+    
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    private ApplicationUser? CurrentUser { get; set; }
+
+    [SupplyParameterFromForm] private InputModel Input { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        CurrentUser = await UserManager.GetUserAsync(state.User);
+        PageUser = await DbContext.Users.SingleOrDefaultAsync(x => x.NormalizedUserName == Username.ToUpperInvariant());
+        if (PageUser is null)
+        {
+            NavManager.NavigateTo("/NotFound");
+            return;
+        }
+
+        Summoners = await DbContext.SummonerAssociations.Include(x => x.Summoner.RankedModels)
+            .Include(x => x.User)
+            .Include(x => x.Summoner)
+            .Where(x => x.User == PageUser).Select(x => x.Summoner).ToListAsync();
+        
+        StateHasChanged();
+    }
+
+    
+    
+    public async Task AddSummoner(EditContext context)
+    {
+        if (PageUser != CurrentUser || PageUser is null) return;
+
+        var split = Input.Combined.Split("#");
+        if (split.Length != 2) return;
+        var gameName = split[0];
+        var tagLine = split[1];
+        
+        var exists = await RiotClient.AccountExists(gameName, tagLine, Input.Region);
+        if (!exists) return;
+        var summoner = await DbContext.Summoners.SingleOrDefaultAsync(x => x.InternalName == gameName.ToLowerInvariant()
+                                                                     && x.InternalTag == tagLine.ToLowerInvariant() &&x.Region == Input.Region);
+        if (summoner is null) return;
+        await DbContext.SummonerAssociations.AddAsync(new ProfileAssociationModel()
+        {
+            Summoner =  summoner,
+            User = CurrentUser!
+        });
+        await DbContext.SaveChangesAsync();
+        
+        NavManager.NavigateTo(NavManager.Uri, true);
+    }
+    
+    public void PopupWindow()
+    {
+        
+    }
+
+    public void ToggleEdit()
+    {
+        Edit = !Edit;
+        StateHasChanged();
+    }
+
+    private sealed class InputModel
+    {
+       [Required]
+       [DataType(DataType.Text)]
+       [Display(Name = "GameName")]
+       public string Combined { get; set; }
+
+       [Required]
+       [DataType(DataType.Text)]
+       [Display(Name = "Tagline")]
+       public string Region { get; set; }
+    }
+    
+}

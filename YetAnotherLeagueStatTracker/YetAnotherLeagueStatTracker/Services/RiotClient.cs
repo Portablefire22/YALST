@@ -304,7 +304,7 @@ public class RiotClient : IRiotClient
       summoner = await db.Summoners.Include(x => x.RankedModels).SingleOrDefaultAsync(x => 
          x.InternalName == gameName.ToLowerInvariant() &&
          x.InternalTag == tagLine.ToLowerInvariant() 
-         && x.Region == platformRouting);
+         && x.Region == platformRouting.ToLowerInvariant());
       if (summoner != null) return summoner;
 
       if (IsLimited) return null;
@@ -326,6 +326,18 @@ public class RiotClient : IRiotClient
 
    }
 
+   public async Task<bool> AccountExists(string gameName, string tagLine, string platformRouting = PlatformRouting.EuW)
+   {
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+
+      var summoner = await db.Summoners.SingleOrDefaultAsync(x =>
+         x.InternalName == gameName.ToLowerInvariant() && x.TagLine == tagLine && x.Region == platformRouting);
+      if (summoner != null) return true;
+      
+      var account = await AccountDtoByRiotId(gameName, tagLine);
+      return account != null;
+   }
+   
    private async Task<string[]?> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 
       string? type = null, int start = 0, int count = 5, string platformRouting = PlatformRouting.EuW)
    {
