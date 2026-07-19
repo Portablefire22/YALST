@@ -13,7 +13,7 @@
                  SummonerLevel="@Summoner.SummonerLevel" Rank="@Rank" ProfileIcon="@Summoner.ProfileIconId"
                  Puuid="@Summoner.Puuid"
                  LastUpdated="@Summoner.RevisionDate"/>
-    <MatchHistory Puuid="@Summoner.Puuid" Region="@Summoner.Region"/> 
+    <MatchHistoryAggregate Summoners="@([Summoner])" /> 
 }
 
 @code {

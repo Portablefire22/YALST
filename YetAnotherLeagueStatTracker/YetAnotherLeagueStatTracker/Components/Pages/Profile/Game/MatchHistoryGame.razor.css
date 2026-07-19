@@ -8,6 +8,23 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.pfp-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2em;
+    border-radius: 0 0 1em 0;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+}
+
+.pfp-container img {
+    width: 100%;
+    aspect-ratio: 1/1;
 }
 
 .match-info {

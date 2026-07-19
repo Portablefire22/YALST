@@ -1,11 +1,27 @@
-
-<base/>
 @page "/Profile/{Username}"
+@using Microsoft.EntityFrameworkCore
+@using YetAnotherLeagueStatTracker.Components.Pages.Profile
+@using YetAnotherLeagueStatTracker.Data
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
 
+@inject ApplicationDbContext DbContext
+
+<MatchHistoryAggregate Summoners="@Summoners"/>
 
 
 @code {
     [Parameter]
     public required string Username { get; set; }
+
+    private SummonerModel[] Summoners { get; set; } = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Summoners = await DbContext.SummonerAssociations.Include(x => x.Summoner).Where(x => x.User.NormalizedUserName == Username.ToUpperInvariant())
+            .Select(x=>x.Summoner).ToArrayAsync();
+        
+        
+        StateHasChanged();
+    }
 
 }

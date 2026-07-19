@@ -2,12 +2,20 @@
 @inject DataDragon DataDragon
 
 <div class="match-history-game">
+    
+    @if (ShowProfileIcon)
+    {
+        <div class="pfp-container">
+            <img src="https://cdn.communitydragon.org/@DataDragon.Version/profile-icon/@Game.ProfileOwner.Summoner.ProfileIconId"/>
+        </div>
+    }
+    
     <div class="match-info">
         <div class="match-quick-info">
             <div class="image-container">
                 <img src="@ChampIcon"/>
             </div>
-            <p id="@(Game.ProfileOwner.Win? "victory" : "defeat")">@WinText</p>
+            <p id="@(Game.ProfileOwner.Win ? "victory" : "defeat")">@WinText</p>
         </div>
         <div class="spells">
             <GameSpell SummonerId="Game.ProfileOwner.Summoner1Id"/>
@@ -29,7 +37,7 @@
         <p>@Game.ProfileOwner.Kills / @Game.ProfileOwner.Deaths / @Game.ProfileOwner.Assists</p>
         <p><small>KDA: </small>@(Kda.ToString("0.00"))</p>
     </div>
-    
+
     <div class="match-inventory">
         <div class="match-items">
             <MatchItem Version="@Version" ItemId="@Game.ProfileOwner.Item0"/>
@@ -41,15 +49,17 @@
         </div>
         <MatchItem Version="@Version" ItemId="@Game.ProfileOwner.Item6"/>
     </div>
-    
+
     <GameParticipants Participants="Game.ParticipantsByTeam" ProfileOwner="@Game.ProfileOwner"/>
-    
+
 </div>
 
 @code {
     [Parameter]
-    public required MatchHistory.ProfileMatch Game { get; set; }
+    public required MatchHistoryAggregate.ProfileMatch Game { get; set; }
 
+    [Parameter] public bool ShowProfileIcon { get; set; } = false;
+    
     public string ChampIcon = "";
     
     public DateTimeOffset GameStart { get; set; } 

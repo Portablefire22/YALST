@@ -55,7 +55,11 @@
         if (!PlatformRouting.IsValid(Region) || string.IsNullOrEmpty(Name)) return;
 
         var splits = Name.Split("#");
-        if (splits.Length != 2) return;
+        if (splits.Length != 2)
+        {
+            NavigationManager.NavigateTo($"/profile/{Name}");
+            return;
+        };
         var module = await JsRuntime.InvokeAsync<IJSObjectReference>("saveCurrentRegion", "script1.js");
         NavigationManager.NavigateTo($"/profile/{Region}/{splits[0]}-{splits[1]}");
     }
