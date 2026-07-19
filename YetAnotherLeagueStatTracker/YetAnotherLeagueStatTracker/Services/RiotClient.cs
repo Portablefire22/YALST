@@ -93,6 +93,8 @@ public class RiotClient : IRiotClient
       {
          GameName = accountDto.GameName,
          TagLine = accountDto.TagLine,
+         InternalName = accountDto.GameName.ToLowerInvariant(),
+         InternalTag = accountDto.TagLine.ToLowerInvariant(),
          Puuid = accountDto.Puuid,
          Region = platformRouting.ToLowerInvariant(),
          RevisionDate = summonerDto.RevisionDate,
@@ -208,6 +210,8 @@ public class RiotClient : IRiotClient
          Id = summoner.Id,
          GameName = accountDto.GameName,
          TagLine = accountDto.TagLine,
+         InternalName = accountDto.GameName.ToLowerInvariant(),
+         InternalTag = accountDto.TagLine.ToLowerInvariant(),
          Puuid = summoner.Puuid,
          Region = summoner.Region,
          RevisionDate = summonerDto.RevisionDate,
@@ -295,11 +299,31 @@ public class RiotClient : IRiotClient
    {
       if (!PlatformRouting.IsValid(platformRouting.ToLowerInvariant())) return null;
       await using var db = await _scopeFactory.CreateDbContextAsync();
-      // We must hit the API to get PUUIDs because Unicode characters can fuck everything up, e.g. "Αrt The Clοwn-EUW"
-      // Which uses non-ascii characters
+      SummonerModel? summoner;
+
+      summoner = await db.Summoners.Include(x => x.RankedModels).SingleOrDefaultAsync(x => 
+         x.InternalName == gameName.ToLowerInvariant() &&
+         x.InternalTag == tagLine.ToLowerInvariant() 
+         && x.Region == platformRouting);
+      if (summoner != null) return summoner;
+
+      if (IsLimited) return null;
+      
+      // Sometimes unicode characters can mess with the search, especially if the internal name is not set
+      // so we query the API for the PUUID, then update the internal name/tag if needed
       var dto = await AccountDtoByRiotId(gameName, tagLine);
       if (dto == null) return null;
-      return await SummonerByPuuid(dto.Puuid, platformRouting);
+      summoner = await SummonerByPuuid(dto.Puuid, platformRouting);
+      if (summoner == null) return null;
+      if (string.IsNullOrEmpty(summoner.InternalName) || string.IsNullOrEmpty(summoner.InternalTag))
+      {
+         db.Update(summoner);
+         summoner.InternalName = summoner.GameName.ToLowerInvariant();
+         summoner.InternalTag = summoner.TagLine.ToLowerInvariant();
+         await db.SaveChangesAsync();
+      }
+      return summoner;
+
    }
 
    private async Task<string[]?> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 

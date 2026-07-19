@@ -12,6 +12,10 @@ public class SummonerModel
     public long SummonerLevel { get; set; }
     public string GameName { get; set; }
     
+    // Invariant lowercase to allow for easier searching whilst preserving display name
+    public string? InternalName { get; set; }
+    public string? InternalTag { get; set; }
+    
     public ICollection<RankedModel>? RankedModels { get; set; }
     
     public string TagLine { get; set; }
