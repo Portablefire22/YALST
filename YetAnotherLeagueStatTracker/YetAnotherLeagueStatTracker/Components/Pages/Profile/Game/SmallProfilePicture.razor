@@ -1,0 +1,23 @@
+@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@inject IJSRuntime JsRuntime
+@rendermode  InteractiveServer
+
+<div class="pfp-container" data-bs-toggle="tooltip" data-bs-placement="top" 
+     data-bs-title="@Summoner.GameName#@Summoner.TagLine (@Summoner.Region)">
+    <img src="https://cdn.communitydragon.org/@Version/profile-icon/@Summoner.ProfileIconId"/>
+</div>
+
+@code {
+    [Parameter]
+    public required SummonerModel Summoner { get; set; }
+    [Parameter]
+    public required string Version { get; set; }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await JsRuntime.InvokeAsync<IJSObjectReference>("initialiseTooltips", "tooltip.js");
+        }
+    }
+}

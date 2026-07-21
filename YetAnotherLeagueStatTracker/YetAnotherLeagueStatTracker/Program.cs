@@ -28,6 +28,11 @@ public class Program
         builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
         builder.Services.AddRouting(options => options.LowercaseUrls = true );
+
+        builder.Services.AddSignalR(e =>
+        {
+            e.MaximumReceiveMessageSize = 102400000;
+        });
         
         builder.Services.AddAuthentication(options =>
             {

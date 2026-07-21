@@ -30,10 +30,13 @@
     <span class="dismiss">🗙</span>
 </div>
 
+<script src="tooltip.js"></script>
+<script src="script1.js"></script>
+
 @code {
 
     private string? Username { get; set; }
-
+    
     protected override async Task OnInitializedAsync()
     {
         var tmp = await AuthenticationStateProvider.GetAuthenticationStateAsync();

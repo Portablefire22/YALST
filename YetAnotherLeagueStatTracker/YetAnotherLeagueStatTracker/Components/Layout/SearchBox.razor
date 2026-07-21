@@ -3,7 +3,7 @@
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
 
-<div class="search-box" onload="onLoad()">
+<div class="search-box">
     <InputSelect @bind-Value="@Region" TValue="string" id="region">
         <option value="br1">BR1</option>
         <option value="eun1">EUN1</option>
@@ -26,7 +26,6 @@
     <button class="btn-primary btn" onclick="@Search">Go</button>
 </div>
 
-<script src="script1.js"></script>
 
 @code {
     private ElementReference SelectBox { get; set; }
