@@ -7,7 +7,15 @@
         <div class="top-row px-4">
             <SearchBox/>
             <AuthorizeView>
-                <a class="user-link" href="/account/manage">@Username</a>
+                <Authorized>
+                    <a class="user-link" href="/profile/@Username">@Username</a>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="user-link">
+                        <a href="/account/register">Register</a>
+                        <a href="/account/login">Login</a>
+                    </div>
+                </NotAuthorized>
             </AuthorizeView>
         </div>
 

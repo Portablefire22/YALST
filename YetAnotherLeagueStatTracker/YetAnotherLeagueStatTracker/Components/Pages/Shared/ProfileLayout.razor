@@ -1,7 +1,14 @@
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using YetAnotherLeagueStatTracker.Data
 @inherits LayoutComponentBase
 @layout YetAnotherLeagueStatTracker.Components.Layout.MainLayout
-@inject IJSRuntime JsRuntime
+
 @inject NavigationManager NavManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApplicationDbContext DbContext
+
 <div class="profile-layout-container">
     <div class="profile-nav">
         <ul class="nav nav-pills flex-column">
@@ -11,6 +18,12 @@
             <li class="nav-item">
                 <NavLink class="nav-link" href=@($"/profile/{Username}/Accounts")>Accounts</NavLink>
             </li>
+            @if (CurrentUser == PageUser && CurrentUser != null)
+            {
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/account/manage">Manage</NavLink>
+                </li>
+            }
         </ul>
     </div>
     <div class="col-lg-9">
@@ -21,6 +34,8 @@
 @code {
 
     private string Username { get; set; } = "";
+    public ApplicationUser? PageUser { get; set; }
+    private ApplicationUser? CurrentUser { get; set; }
     
     protected override void OnInitialized()
     {
@@ -28,6 +43,19 @@
         var spl = url.Split("/profile/");
         if (spl.Length <= 1) return;
         Username = spl[1].Split("/")[0];
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        CurrentUser = await UserManager.GetUserAsync(state.User);
+        PageUser = await DbContext.Users.SingleOrDefaultAsync(x => x.NormalizedUserName == Username.ToUpperInvariant());
+        if (PageUser is null)
+        {
+            NavManager.NavigateTo("/NotFound");
+            return;
+        }
         StateHasChanged();
     }
 
