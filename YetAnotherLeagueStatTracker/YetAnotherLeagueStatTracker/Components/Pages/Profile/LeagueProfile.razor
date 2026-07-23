@@ -32,7 +32,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Summoner = await RiotClient.SummonerByRiotId(GameName, Tag, Region);
+        Summoner = await RiotClient.SummonerModelByRiotId(GameName, Tag, Region);
         if (Summoner == null)
         {
             NavigationManager.NavigateTo("/NotFound");

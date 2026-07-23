@@ -15,7 +15,7 @@ public class SummonerModel
     public string? InternalName { get; set; }
     public string? InternalTag { get; set; }
 
-    public ICollection<RankedModel>? RankedModels { get; set; }
+    public ICollection<RankedModel> RankedModels { get; set; }
     
     public string TagLine { get; set; }
     public string Region { get; set; }

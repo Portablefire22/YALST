@@ -17,7 +17,7 @@
 
     public async Task OnUpdate()
     {
-        var summoner = await RiotClient.UpdateSummoner(Puuid);
+        var summoner = await RiotClient.UpdateSummonerByPuuid(Puuid);
         if (summoner == null) return;
         Console.WriteLine($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}");
         NavigationManager.NavigateTo($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}", true);

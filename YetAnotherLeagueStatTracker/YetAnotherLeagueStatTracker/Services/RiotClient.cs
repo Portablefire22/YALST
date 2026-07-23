@@ -74,22 +74,69 @@ public class RiotClient : IRiotClient
       if (x is not { IsSuccessStatusCode: true }) return null;
       return await JsonSerializer.DeserializeAsync<AccountDto>(await x.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
    }
-
-   private async Task<SummonerDto?> SummonerDtoByPuuid(string puuid, string regionalRouting)
+   
+   /// <summary>
+   /// Pulls an AccountDto from Riot's Api using the given PUUID
+   /// </summary>
+   /// <param name="puuid">PUUID to search</param>
+   /// <param name="regionalRouting">Regionalrouting to use, use the closest region.</param>
+   /// <returns>AccountDo of associated PUUID if found, null if not</returns>
+   private async Task<AccountDto?> AccountDtoByPuuid(string puuid, string regionalRouting = RegionalRouting.Europe)
    {
-      var url = $"https://{regionalRouting}.{ApiUrl}/lol/summoner/v4/summoners/by-puuid/{puuid}";
+      var url = $"https://{regionalRouting}.{ApiUrl}/riot/account/v1/accounts/by-puuid/{puuid}";
+      var x = await GetAsync(new Uri(url));
+      if (x is not { IsSuccessStatusCode: true }) return null;
+      return await JsonSerializer.DeserializeAsync<AccountDto>(await x.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+   }
+   
+   /// <summary>
+   /// Pulls a SummonerDto from Riot's Api using the given account PUUID
+   /// </summary>
+   /// <param name="puuid">PUUID to search</param>
+   /// <param name="platformRouting">Platform to search SummonerDto on, e.g. EUW1,NA1</param>
+   /// <returns>SummonerDto of associated PUUID if found, null if not</returns>
+   private async Task<SummonerDto?> SummonerDtoByPuuid(string puuid, string platformRouting)
+   {
+      var url = $"https://{platformRouting}.{ApiUrl}/lol/summoner/v4/summoners/by-puuid/{puuid}";
       var x = await GetAsync(new Uri(url));
       if (x is not { IsSuccessStatusCode: true }) return null;
       return await JsonSerializer.DeserializeAsync<SummonerDto>(await x.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
    }
 
-   private async Task<SummonerModel?> SummonerModelByPuuid(string puuid, string platformRouting)
+   /// <summary>
+   /// Retrieves SummonerModel from the DB matching the PUUID, pulling from the Riot API if the summoner was not found
+   /// in the DB. 
+   /// </summary>
+   /// <param name="puuid">PUUID of the summoner to find</param>
+   /// <param name="platformRouting">PlatformRouting of account, e.g EUW1, NA1. If region is null, attempts to get
+   /// region from Summoner's Region field</param>
+   /// <param name="tryDb">Check DB before pulling API, false to update Summoner in DB</param>
+   /// <returns>SummonerModel if found, null if not</returns>
+   public async Task<SummonerModel?> SummonerModelByPuuid(string puuid, string? platformRouting = null, bool tryDb = true)
    {
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+      // PUUIDs are globally unique, so we don't check for region
+      var dbSummoner = await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid);
+      if (tryDb && dbSummoner != null)
+      {
+         if (string.IsNullOrEmpty(dbSummoner.InternalName) || string.IsNullOrEmpty(dbSummoner.InternalTag))
+         {
+            db.Update(dbSummoner);
+            dbSummoner.InternalName = dbSummoner.GameName.ToLowerInvariant();
+            dbSummoner.InternalTag = dbSummoner.TagLine.ToLowerInvariant();
+            await db.SaveChangesAsync();
+         }
+         return dbSummoner;
+      }
+
+      platformRouting ??= dbSummoner?.Region;
+      if (platformRouting == null) return null;
+      
       var accountDto = await  AccountDtoByPuuid(puuid);
       if (accountDto == null) return null;
       var summonerDto = await SummonerDtoByPuuid(puuid, platformRouting);
       if (summonerDto == null) return null;
-      var summonerModel = new SummonerModel()
+      var apiSummoner = new SummonerModel()
       {
          GameName = accountDto.GameName,
          TagLine = accountDto.TagLine,
@@ -101,56 +148,58 @@ public class RiotClient : IRiotClient
          SummonerLevel = summonerDto.SummonerLevel,
          ProfileIconId = summonerDto.ProfileIconId,
       };
-      return summonerModel;  
-   }
-   
-   private async Task<SummonerModel?> SummonerModelByRiotId(string gameName, string tagLine, string platformRouting, bool skip = false)
-   {
-      var accountDto = await AccountDtoByRiotId(gameName, tagLine);
-      if (accountDto == null) return null;
-      var summonerDto = await SummonerDtoByPuuid(accountDto.Puuid, platformRouting);
-      if (summonerDto == null) return null;
-
-      var summonerModel = new SummonerModel()
+      if (dbSummoner != null)
       {
-         GameName = accountDto.GameName,
-         TagLine = accountDto.TagLine,
-         Puuid = accountDto.Puuid,
-         Region = platformRouting,
-         RevisionDate = summonerDto.RevisionDate,
-         SummonerLevel = summonerDto.SummonerLevel,
-         ProfileIconId = summonerDto.ProfileIconId,
-      };
-      return summonerModel;
-   }
-   
-   private async Task<AccountDto?> AccountDtoByPuuid(string puuid, string regionalRouting = RegionalRouting.Europe)
-   {
-      var url = $"https://{regionalRouting}.{ApiUrl}/riot/account/v1/accounts/by-puuid/{puuid}";
-      var x = await GetAsync(new Uri(url));
-      if (x is not { IsSuccessStatusCode: true }) return null;
-      return await JsonSerializer.DeserializeAsync<AccountDto>(await x.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
-   }
-
-   private async Task<RankedModel[]?> UpdateSummonerRankByPuuid(string puuid, ApplicationDbContext? db = null)
-   {
-      bool dispose = false;
-      if (db == null)
-      {
-         dispose = true;
-         db = await _scopeFactory.CreateDbContextAsync();
+         apiSummoner.Id = dbSummoner.Id;
+         db.Entry(dbSummoner).CurrentValues.SetValues(apiSummoner);
       }
-      var summoner = await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid);
-      if (summoner == null) return null;
+      else
+      {
+         await db.Summoners.AddAsync(apiSummoner);
+      }
+      await db.SaveChangesAsync();
+      return apiSummoner;
+   }
+  
+   /// <summary>
+   /// Retrieves Summoner from the given Gamename, Tagline, and Region, pulling from API if not found in local DB.
+   /// </summary>
+   /// <param name="gameName">Gamename to search</param>
+   /// <param name="tagLine">Tagline to search</param>
+   /// <param name="platformRouting">Region to search</param>
+   /// <returns>SummonerModel matching parameters, or null if not found</returns>
+   public async Task<SummonerModel?> SummonerModelByRiotId(string gameName, string tagLine, string platformRouting)
+   {
+      if (!PlatformRouting.IsValid(platformRouting.ToLowerInvariant())) return null;
+      await using var db = await _scopeFactory.CreateDbContextAsync();
 
-      var resp = await GetAsync($"https://{summoner.Region}.{ApiUrl}/lol/league/v4/entries/by-puuid/{puuid}");
-      if (resp is not {IsSuccessStatusCode: true}) return null;
+      var summoner = await db.Summoners.Include(x => x.RankedModels).SingleOrDefaultAsync(x => 
+         x.InternalName == gameName.ToLowerInvariant() &&
+         x.InternalTag == tagLine.ToLowerInvariant() 
+         && x.Region == platformRouting.ToLowerInvariant());
+      if (summoner != null) return summoner;
+
+      var dto = await AccountDtoByRiotId(gameName, tagLine);
+      if (dto == null) return null;
+      return await SummonerModelByPuuid(dto.Puuid, platformRouting);
+   }
+
+   /// <summary>
+   /// Updates a given summoner's rank by pulling the API. Auto-populates the RankModels field with the new values
+   /// </summary>
+   /// <param name="summoner">Summoner to update</param>
+   /// <returns>Summoner's RankedModel for all applicable Queues</returns>
+   private async Task<RankedModel[]> UpdateSummonerRank(SummonerModel summoner)
+   {
+      var resp = await GetAsync($"https://{summoner.Region}.{ApiUrl}/lol/league/v4/entries/by-puuid/{summoner.Puuid}");
+      if (resp is not {IsSuccessStatusCode: true}) return [];
 
       var entries =
          await JsonSerializer.DeserializeAsync<LeagueEntryDto[]>(await resp.Content.ReadAsStreamAsync(),
             _jsonSerializerOptions);
-      if (entries == null) return null;
+      if (entries == null) return [];
 
+      await using var db = await _scopeFactory.CreateDbContextAsync();
       var models = new List<RankedModel>();
       foreach (var entry in entries)
       {
@@ -166,16 +215,20 @@ public class RiotClient : IRiotClient
             Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
          };
          models.Add(model);
-         await db.AddAsync(model);
+         db.Summoners.Attach(summoner);
       }
-
-      db.Update(summoner);
-      summoner.RankedModels = models;
+      await db.AddRangeAsync(models);
       await db.SaveChangesAsync();
-      
-      if(dispose) await db.DisposeAsync();
-      
-      return models.ToArray();
+
+      summoner.RankedModels = models;
+      return [.. models];
+   }
+   
+   private async Task<RankedModel[]?> UpdateSummonerRankByPuuid(string puuid)
+   {
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+      var summoner = await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid);
+      return summoner == null? null : await UpdateSummonerRank(summoner);
    }
 
    public async Task<Dictionary<string, RankedModel[]>?> SummonerRankHistoryByPuuid(string puuid)
@@ -194,138 +247,66 @@ public class RiotClient : IRiotClient
       }
       return rankedByQueues.Count == 0 ? null : rankedByQueues;
    }
-   
-   public async Task<SummonerModel?> UpdateSummoner(string puuid)
+
+   /// <summary>
+   /// Populates the given SummonerModel with its associated ranks
+   /// </summary>
+   /// <param name="summoner">Summoner to populate</param>
+   private async Task PopulateSummonerRank(SummonerModel summoner)
    {
       await using var db = await _scopeFactory.CreateDbContextAsync();
-      if (await db.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid) is not {} summoner) return null;
-      var accountDto = await AccountDtoByPuuid(summoner.Puuid);
-      if (accountDto == null) return null;
-      // We're going to expect that they stayed on the same region unless someone searches for it later on
-      var summonerDto = await SummonerDtoByPuuid(puuid, summoner.Region);
-      if (summonerDto == null) return null;
+      var ranked = await db.SummonerRanks.Where(x => x.Summoner == summoner).ToArrayAsync();
+      if (ranked.Length == 0) ranked = await UpdateSummonerRank(summoner);
       
-      var summonerModel = new SummonerModel()
+      if (ranked.Length != 0)
       {
-         Id = summoner.Id,
-         GameName = accountDto.GameName,
-         TagLine = accountDto.TagLine,
-         InternalName = accountDto.GameName.ToLowerInvariant(),
-         InternalTag = accountDto.TagLine.ToLowerInvariant(),
-         Puuid = summoner.Puuid,
-         Region = summoner.Region,
-         RevisionDate = summonerDto.RevisionDate,
-         SummonerLevel = summonerDto.SummonerLevel,
-         ProfileIconId = summonerDto.ProfileIconId,
-      };
-      db.Entry(summoner).CurrentValues.SetValues(summonerModel);
-      await db.SaveChangesAsync();
+         var ranks = new List<RankedModel>();
+         foreach (var queue in QueueType.Queues)
+         {
+            var rank = ranked.Where(x => x.QueueType == queue).OrderBy(x=>x.Time).LastOrDefault();
+            Logger.LogInformation(rank?.Tier.ToString());
+            if (rank != null) ranks.Add(rank);
+         }
 
-      await UpdateSummonerRankByPuuid(summonerModel.Puuid);
+         summoner.RankedModels = ranks;
+      }
+   }
+   
+   /// <summary>
+   /// Updates a given Summoner from their PUUID, updating Rank and populating Match history.
+   /// </summary>
+   /// <param name="puuid">PUUID of summoner to update</param>
+   /// <returns>Newly updated Summoner</returns>
+   public async Task<SummonerModel?> UpdateSummonerByPuuid(string puuid)
+   {
+      var summonerModel = await SummonerModelByPuuid(puuid, tryDb: false);
+      if (summonerModel == null) return null;
+
+      await UpdateSummonerRank(summonerModel);
       
-      var ids = await MatchIdsByPuuid(summonerModel.Puuid, platformRouting: summonerModel.Region ,count: 20);
+      var ids = await MatchIdsByPuuid(summonerModel.Puuid, platformRouting: summonerModel.Region, count: 20);
       if (ids == null) return summonerModel;
       foreach (var id in ids)
       {
          try
          {
-            var x = await GetMatchById(id, regionalRouting: RegionalRouting.FromRegion(summonerModel.Region));
+            _ = await GetMatchById(id, regionalRouting: RegionalRouting.FromRegion(summonerModel.Region));
          }
          catch (Exception e)
          {
             Logger.LogError($"{e}");
          }
       }
-
-
       return summonerModel;
    }
 
-   public async Task<SummonerModel?> SummonerByPuuid(string puuid, string platformRouting = PlatformRouting.EuW, ApplicationDbContext? context = null)
-   {
-      bool dispose = false;
-      if (context == null)
-      {
-         dispose = true;
-         context = await _scopeFactory.CreateDbContextAsync();
-      }
-      
-      var account = await context.Summoners.SingleOrDefaultAsync(x => x.Puuid == puuid);
-      
-      // Get and save account to DB
-      if (account != null)
-      {
-         var ranked = context.SummonerRanks.Where(x => x.Summoner == account);
-         
-         if (ranked.Any())
-         {
-            var ranks = new List<RankedModel>();
-            foreach (var queue in QueueType.Queues)
-            {
-               var rank = await ranked.Where(x => x.QueueType == queue).OrderBy(x=>x.Time).LastOrDefaultAsync();
-               Logger.LogInformation(rank?.Tier.ToString());
-               if (rank != null) ranks.Add(rank);
-            }
-
-            account.RankedModels = ranks.Count > 0 ? ranks : null;
-         }
-
-         return account;
-      }
-      Logger.LogInformation($"{puuid} ({platformRouting}) was not found, pulling from API");
-      var model = await SummonerModelByPuuid(puuid, platformRouting);
-      if (model == null) return null;
-      
-      // Saving summoner 
-      // Summoners can change names or tags, so we want to check if the Puuid exists already, then update the original
-      if (await context.Summoners.SingleOrDefaultAsync(x => x.Puuid == model.Puuid) is { } summoner)
-      {
-         model.Id = summoner.Id;
-         context.Entry(summoner).CurrentValues.SetValues(model);
-      }
-      else
-      {
-         await context.Summoners.AddAsync(model);
-      }
-      
-      await context.SaveChangesAsync();
-      await UpdateSummonerRankByPuuid(model.Puuid, context);
-      
-      if (dispose) await context.DisposeAsync();
-      return model;
-   }
-   
-   public async Task<SummonerModel?> SummonerByRiotId(string gameName, string tagLine, string platformRouting = PlatformRouting.EuW)
-   {
-      if (!PlatformRouting.IsValid(platformRouting.ToLowerInvariant())) return null;
-      await using var db = await _scopeFactory.CreateDbContextAsync();
-      SummonerModel? summoner;
-
-      summoner = await db.Summoners.Include(x => x.RankedModels).SingleOrDefaultAsync(x => 
-         x.InternalName == gameName.ToLowerInvariant() &&
-         x.InternalTag == tagLine.ToLowerInvariant() 
-         && x.Region == platformRouting.ToLowerInvariant());
-      if (summoner != null) return summoner;
-
-      if (IsLimited) return null;
-      
-      // Sometimes unicode characters can mess with the search, especially if the internal name is not set
-      // so we query the API for the PUUID, then update the internal name/tag if needed
-      var dto = await AccountDtoByRiotId(gameName, tagLine);
-      if (dto == null) return null;
-      summoner = await SummonerByPuuid(dto.Puuid, platformRouting);
-      if (summoner == null) return null;
-      if (string.IsNullOrEmpty(summoner.InternalName) || string.IsNullOrEmpty(summoner.InternalTag))
-      {
-         db.Update(summoner);
-         summoner.InternalName = summoner.GameName.ToLowerInvariant();
-         summoner.InternalTag = summoner.TagLine.ToLowerInvariant();
-         await db.SaveChangesAsync();
-      }
-      return summoner;
-
-   }
-
+   /// <summary>
+   /// Checks if an account matching Gamename, Tagline, and Region exists in the DB or Api
+   /// </summary>
+   /// <param name="gameName">Gamename of summoner to search</param>
+   /// <param name="tagLine">Tagline of summoner to search</param>
+   /// <param name="platformRouting">Region summoner resides in</param>
+   /// <returns>True if account exists, false if not</returns>
    public async Task<bool> AccountExists(string gameName, string tagLine, string platformRouting = PlatformRouting.EuW)
    {
       await using var db = await _scopeFactory.CreateDbContextAsync();
@@ -337,8 +318,20 @@ public class RiotClient : IRiotClient
       var account = await AccountDtoByRiotId(gameName, tagLine);
       return account != null;
    }
-   
-   private async Task<string[]?> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 
+  
+   /// <summary>
+   /// Pulls MatchIds played by the associated PUUID from the API.
+   /// </summary>
+   /// <param name="puuid">Summoner PUUID to search</param>
+   /// <param name="startTime">Epoch timestamp in seconds</param>
+   /// <param name="endTime">Epoch timestamp in seconds</param>
+   /// <param name="queue">Filters to only match ids of a specific queue id</param>
+   /// <param name="type">Filter to only match ids of a specific type</param>
+   /// <param name="start">Starting index</param>
+   /// <param name="count">Number of IDs to return</param>
+   /// <param name="platformRouting">Region to query</param>
+   /// <returns>List of Match IDs found</returns>
+   private async Task<string[]> MatchIdsByPuuid(string puuid, long startTime = 0, long endTime = 0, int queue = 0, 
       string? type = null, int start = 0, int count = 5, string platformRouting = PlatformRouting.EuW)
    {
       var url = $"https://{RegionalRouting.FromRegion(platformRouting)}.{ApiUrl}/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}";
@@ -373,24 +366,25 @@ public class RiotClient : IRiotClient
       {
          Logger.LogError($"Failed to deserialise match IDs");
       }
-      return ids is { Length: > 0 } ? ids : null;
+      return ids;
    }
 
-   public async Task UpdateMatchParticipants(MatchModel match, string regionalRouting, ApplicationDbContext? db = null)
+   private async Task<MatchDto?> GetMatchDto(string matchId, string regionalRouting)
    {
-      bool dispose = false;
-      if (db == null)
-      {
-         dispose = true;
-         db = await _scopeFactory.CreateDbContextAsync();
-      } 
-      
-      var uri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{match.MatchId}";
+      var uri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{matchId}";
       var result = await GetAsync(uri);
-      if (result is not { IsSuccessStatusCode: true }) return;
+      if (result is not { IsSuccessStatusCode: true }) return null;
       var matchDto = await JsonSerializer.DeserializeAsync<MatchDto>(await result.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+      return matchDto;
+   }
+   
+   public async Task UpdateMatchParticipants(MatchModel match, string regionalRouting)
+   {
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+      
+      var matchDto = await GetMatchDto(match.MatchId, regionalRouting);
       if (matchDto == null) return;
-
+      
       var currentParticipants = db.MatchParticipants.Where(x => x.Match == match);
       foreach (var participant in matchDto.Info.Participants)
       {
@@ -400,18 +394,19 @@ public class RiotClient : IRiotClient
 
          foreach (var perk in participant.Perks.Styles)
          {
-            if (perk.Description == "primaryStyle")
+            switch (perk.Description)
             {
-               mainRune = perk.Selections[0].Perk;
-            }
-            else if (perk.Description == "subStyle")
-            {
-               subRune = perk.Selections[0].Perk;
+               case "primaryStyle":
+                  mainRune = perk.Selections[0].Perk;
+                  break;
+               case "subStyle":
+                  subRune = perk.Selections[0].Perk;
+                  break;
             }
          }
          
-         var summoner = await SummonerByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant(), db);
-         
+         var summoner = await SummonerModelByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant());
+         if (summoner == null) return;
          var model = new MatchParticipant()
          {
             Assists =  participant.Assists,
@@ -419,7 +414,7 @@ public class RiotClient : IRiotClient
             Deaths =  participant.Deaths,
             ChampionName =  participant.ChampionName,
             Match = match,
-            Summoner = summoner!,
+            Summoner = summoner,
             TeamPosition = participant.TeamPosition,
             ChampionId =  participant.ChampionId,
             ChampionLevel = participant.ChampLevel,
@@ -458,23 +453,15 @@ public class RiotClient : IRiotClient
             Win =  participant.Win,
          };
          await db.MatchParticipants.AddAsync(model);
+         db.Matches.Attach(match);
+         db.Summoners.Attach(summoner);
       }
       await db.SaveChangesAsync();
-
-      if (dispose)
-      {
-         await db.DisposeAsync();
-      }
    }
    
-   public async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe, ApplicationDbContext? db = null)
+   public async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe)
    {
-      bool dispose = false;
-      if (db == null)
-      {
-         dispose = true;
-         db = await _scopeFactory.CreateDbContextAsync();
-      } 
+      await using var db = await _scopeFactory.CreateDbContextAsync();
 
       var match = await db.Matches.SingleOrDefaultAsync(x => x.MatchId == matchId);
       if (match != null)
@@ -482,10 +469,7 @@ public class RiotClient : IRiotClient
          // If this is an old version without participant count, migrate it
          if (match.ParticipantCount == 0)
          { 
-            var tUri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{matchId}";
-            var tResult = await GetAsync(tUri);
-            if (tResult is not { IsSuccessStatusCode: true }) return null;
-            var tMatchDto = await JsonSerializer.DeserializeAsync<MatchDto>(await tResult.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+            var tMatchDto = await GetMatchDto(matchId, regionalRouting);
             if (tMatchDto == null) return null;
             db.Update(match);
             match.ParticipantCount = tMatchDto.Info.Participants.Length;
@@ -496,15 +480,14 @@ public class RiotClient : IRiotClient
          var part = db.MatchParticipants.Where(x => x.Match == match);
          if (part.Count() < match.ParticipantCount)
          {
-            await UpdateMatchParticipants(match, regionalRouting, db);
+            await UpdateMatchParticipants(match, regionalRouting);
          }
+
+         await db.SaveChangesAsync();
          return match;
       }
-      
-      var uri =  $"https://{regionalRouting}.{ApiUrl}/lol/match/v5/matches/{matchId}";
-      var result = await GetAsync(uri);
-      if (result is not { IsSuccessStatusCode: true }) return null;
-      var matchDto = await JsonSerializer.DeserializeAsync<MatchDto>(await result.Content.ReadAsStreamAsync(), _jsonSerializerOptions);
+     
+      var matchDto =  await GetMatchDto(matchId, regionalRouting);
       if (matchDto == null) return null;
 
      
@@ -548,7 +531,8 @@ public class RiotClient : IRiotClient
             }
          }
          
-         var summoner = await SummonerByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant(), db);
+         var summoner = await SummonerModelByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant());
+         if (summoner == null) continue;
          
          var model = new MatchParticipant()
          {
@@ -596,11 +580,11 @@ public class RiotClient : IRiotClient
             Win =  participant.Win,
          };
          await db.MatchParticipants.AddAsync(model);
+         db.Summoners.Attach(summoner!);
       }
 
       await db.Matches.AddAsync(match);
       await db.SaveChangesAsync();
-      if (dispose) await db.DisposeAsync();
       return match;
    }
    
