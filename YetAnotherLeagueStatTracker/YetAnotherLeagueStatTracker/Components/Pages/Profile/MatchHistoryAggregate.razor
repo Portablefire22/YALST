@@ -38,7 +38,7 @@
                 var tmpParticipants = DbContext.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.Id == game.Id);
                 if (game.ParticipantCount != tmpParticipants.Count())
                 {
-                    await RiotClient.GetMatchById(game.MatchId, RegionalRouting.FromRegion(summoner.Region));
+                    //await RiotClient.GetMatchById(game.MatchId, RegionalRouting.FromRegion(summoner.Region));
                     tmpParticipants = DbContext.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.Id == game.Id);
                 }
 

@@ -406,7 +406,7 @@ public class RiotClient : IRiotClient
          }
          
          var summoner = await SummonerModelByPuuid(participant.Puuid, match.PlatformId.ToLowerInvariant());
-         if (summoner == null) return;
+         if (summoner == null) continue;
          var model = new MatchParticipant()
          {
             Assists =  participant.Assists,
@@ -481,9 +481,9 @@ public class RiotClient : IRiotClient
          if (part.Count() < match.ParticipantCount)
          {
             await UpdateMatchParticipants(match, regionalRouting);
+            await db.SaveChangesAsync();
          }
 
-         await db.SaveChangesAsync();
          return match;
       }
      
