@@ -6,11 +6,11 @@
 <div class="game-participants-container">
     @if (_doSubteams)
     {
-        <Subteam Participants="Participants" ProfileOwner="ProfileOwner"/>
+        <Subteam Participants="EndParticipants" ProfileOwner="ProfileOwner"/>
     }
     else
     {
-        <Team Participants="Participants" ProfileOwner="ProfileOwner"/>
+        <Team Participants="EndParticipants" ProfileOwner="ProfileOwner"/>
     }
 </div>
 
@@ -20,6 +20,9 @@
     [Parameter]
     public required MatchParticipant ProfileOwner { get; set; }
 
+    
+    private Dictionary<int, List<MatchParticipant>> EndParticipants { get; set; }
+    
     private bool _doSubteams = false;
 
     protected override void OnInitialized()
@@ -28,7 +31,11 @@
         _doSubteams = !Participants.ContainsKey(100);
         if (_doSubteams)
         {
-            Participants = Participants.OrderBy(x => x.Value.First().SubteamPlacement).ToDictionary();
+            EndParticipants = Participants.OrderBy(x => x.Value.First().SubteamPlacement).ToDictionary();
+        }
+        else
+        {
+            EndParticipants = Participants;
         }
         StateHasChanged();
     }

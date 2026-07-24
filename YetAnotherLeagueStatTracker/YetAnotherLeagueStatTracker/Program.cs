@@ -43,8 +43,15 @@ public class Program
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
                                throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
-            options.UseSqlite(connectionString));
+        var serverVersion = new MariaDbServerVersion(new Version(11,4,12));
+        builder.Services.AddDbContextFactory<ApplicationDbContext>(options => 
+            options.UseMySql(connectionString,  serverVersion)
+                #if DEBUG
+                .LogTo(Console.WriteLine, LogLevel.Information)
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors()
+            #endif
+        );
         
         builder.Services.AddSingleton<RiotClient>();
         builder.Services.AddSingleton<DataDragon>();

@@ -4,7 +4,8 @@
 @using YetAnotherLeagueStatTracker.Data.LeagueModels
 @using YetAnotherLeagueStatTracker.Services
 @inject RiotClient RiotClient
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> Factory
+
 
 <div class="match-history">
 
@@ -29,45 +30,46 @@
     protected override async Task OnInitializedAsync()
     {
         var hist = new List<ProfileMatch>();
-        foreach (var summoner in Summoners)
+        await using (var context = await Factory.CreateDbContextAsync())
         {
-            var games = DbContext.MatchParticipants.Where(x => x.Summoner.Id == summoner.Id).Select(y => y.Match).OrderByDescending(x => x.GameCreation);
-
-            foreach (var game in games)
+            foreach (var summoner in Summoners)
             {
-                var tmpParticipants = DbContext.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.Id == game.Id);
-                if (game.ParticipantCount != tmpParticipants.Count())
+                var games = await context.MatchParticipants.Where(x => x.Summoner.Id == summoner.Id).Select(y => y.Match).OrderByDescending(x => x.GameCreation).Select(x => x.MatchId).ToArrayAsync();
+
+                foreach (var id in games)
                 {
-                    //await RiotClient.GetMatchById(game.MatchId, RegionalRouting.FromRegion(summoner.Region));
-                    tmpParticipants = DbContext.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.Id == game.Id);
+                    var game = await RiotClient.GetMatchById(id);
+                    if (game == null) continue;
+                    var tmpParticipants = await context.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.Id == game.Id).ToArrayAsync();
+
+                    var teams = new Dictionary<int, List<MatchParticipant>>();
+
+                    foreach (var participant in tmpParticipants)
+                    {
+                        if (participant.PlayerSubteamId == 0)
+                        {
+                            if (!teams.ContainsKey(participant.TeamId)) teams.Add(participant.TeamId, []);
+                            teams[participant.TeamId].Add(participant);
+                        }
+                        else
+                        {
+                            if (!teams.ContainsKey(participant.PlayerSubteamId)) teams.Add(participant.PlayerSubteamId, []);
+                            teams[participant.PlayerSubteamId].Add(participant);
+                        }
+                    }
+
+                    var m = new ProfileMatch()
+                    {
+                        Match = game,
+                        ProfileOwner = await context.MatchParticipants.Include(matchParticipant => matchParticipant.Summoner).SingleAsync(x => x.Match.Id == game.Id && x.Summoner.Id == summoner.Id),
+                        ParticipantsByTeam = teams
+                    };
+                    hist.Add(m);
                 }
 
-                var teams = new Dictionary<int, List<MatchParticipant>>();
-
-                foreach (var participant in tmpParticipants)
-                {
-                    if (participant.PlayerSubteamId == 0)
-                    {
-                        if (!teams.ContainsKey(participant.TeamId)) teams.Add(participant.TeamId, []);
-                        teams[participant.TeamId].Add(participant);
-                    }
-                    else
-                    {
-                        if (!teams.ContainsKey(participant.PlayerSubteamId)) teams.Add(participant.PlayerSubteamId, []);
-                        teams[participant.PlayerSubteamId].Add(participant);
-                    }
-                }
-
-                var m = new ProfileMatch()
-                {
-                    Match = game,
-                    ProfileOwner = await DbContext.MatchParticipants.Include(matchParticipant => matchParticipant.Summoner).SingleAsync(x => x.Match.Id == game.Id && x.Summoner.Id == summoner.Id),
-                    ParticipantsByTeam = teams
-                };
-                hist.Add(m);
             }
-
         }
+
         History = hist.OrderByDescending(x => x.Match.GameCreation).ToArray();
         StateHasChanged();
     }

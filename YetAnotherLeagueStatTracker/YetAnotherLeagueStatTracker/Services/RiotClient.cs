@@ -455,10 +455,11 @@ public class RiotClient : IRiotClient
          await db.MatchParticipants.AddAsync(model);
          db.Matches.Attach(match);
          db.Summoners.Attach(summoner);
+         await db.SaveChangesAsync();
       }
       await db.SaveChangesAsync();
    }
-   
+
    public async Task<MatchModel?> GetMatchById(string matchId, string regionalRouting = RegionalRouting.Europe)
    {
       await using var db = await _scopeFactory.CreateDbContextAsync();
@@ -478,7 +479,7 @@ public class RiotClient : IRiotClient
         
          // Sometimes API rate-limiting causes us to miss a few summoners, this helps reduce that issue
          var part = db.MatchParticipants.Where(x => x.Match == match);
-         if (part.Count() < match.ParticipantCount)
+         if (part.Count() != match.ParticipantCount)
          {
             await UpdateMatchParticipants(match, regionalRouting);
             await db.SaveChangesAsync();

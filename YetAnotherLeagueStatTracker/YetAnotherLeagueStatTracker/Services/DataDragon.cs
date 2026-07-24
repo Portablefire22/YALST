@@ -5,9 +5,9 @@ namespace YetAnotherLeagueStatTracker.Services;
 
 public class DataDragon
 {
-    public string Version { get; private set; }= "";
+    public string Version { get; private set; }= "16.13.1";
     
-    private DateTime LastChecked = DateTime.UtcNow;
+    private DateTime _lastChecked = DateTime.UnixEpoch;
 
     private Dictionary<int, GameQueue> Queues = [];
     
@@ -45,8 +45,9 @@ public class DataDragon
 
     public async Task<string> GetVersion()
     {
-        if (string.IsNullOrEmpty(Version) || (DateTime.UtcNow - LastChecked).TotalMinutes >= 15)
+        if (string.IsNullOrEmpty(Version) || (DateTime.UtcNow - _lastChecked).TotalMinutes >= 15)
         {
+            _lastChecked = DateTime.UtcNow;
             await UpdateVersion();
         }
         return Version;
@@ -111,6 +112,7 @@ public class DataDragon
         {
             _augments.TryAdd(aug.Id, aug);
         }
+
     }
 
     public string? GetSubTeamName(int subteamId)

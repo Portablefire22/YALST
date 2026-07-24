@@ -10,7 +10,7 @@
 @inject NavigationManager NavManager
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> Factory
 
 @inject RiotClient RiotClient
 
@@ -75,19 +75,22 @@
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        CurrentUser = await UserManager.GetUserAsync(state.User);
-        PageUser = await DbContext.Users.SingleOrDefaultAsync(x => x.NormalizedUserName == Username.ToUpperInvariant());
-        if (PageUser is null)
+       
+        await using (var context = await Factory.CreateDbContextAsync())
         {
-            NavManager.NavigateTo("/NotFound");
-            return;
-        }
+            CurrentUser = await context.Users.SingleOrDefaultAsync(x => state.User.Identity != null && state.User.Identity.Name != null && x.NormalizedUserName == state.User.Identity.Name.ToUpperInvariant());
+            PageUser = await context.Users.SingleOrDefaultAsync(x => x.NormalizedUserName == Username.ToUpperInvariant());
+            if (PageUser is null)
+            {
+                NavManager.NavigateTo("/NotFound");
+                return;
+            }
 
-        Summoners = await DbContext.SummonerAssociations.Include(x => x.Summoner.RankedModels)
-            .Include(x => x.User)
-            .Include(x => x.Summoner)
-            .Where(x => x.User == PageUser).Select(x => x.Summoner).ToListAsync();
-        
+            Summoners = await context.SummonerAssociations.Include(x => x.Summoner.RankedModels)
+                .Include(x => x.User)
+                .Include(x => x.Summoner)
+                .Where(x => x.User == PageUser).Select(x => x.Summoner).ToListAsync();
+        }
         StateHasChanged();
     }
 
@@ -96,6 +99,7 @@
     public async Task AddSummoner(EditContext context)
     {
         if (PageUser != CurrentUser || PageUser is null) return;
+        await using var dbContext = await Factory.CreateDbContextAsync();
 
         var split = Input.Combined.Split("#");
         if (split.Length != 2) return;
@@ -104,15 +108,17 @@
         
         var exists = await RiotClient.AccountExists(gameName, tagLine, Input.Region);
         if (!exists) return;
-        var summoner = await DbContext.Summoners.SingleOrDefaultAsync(x => x.InternalName == gameName.ToLowerInvariant()
+        var summoner = await dbContext.Summoners.SingleOrDefaultAsync(x => x.InternalName == gameName.ToLowerInvariant()
                                                                      && x.InternalTag == tagLine.ToLowerInvariant() &&x.Region == Input.Region);
         if (summoner is null) return;
-        await DbContext.SummonerAssociations.AddAsync(new ProfileAssociationModel()
+        await dbContext.SummonerAssociations.AddAsync(new ProfileAssociationModel()
         {
             Summoner =  summoner,
             User = CurrentUser!
         });
-        await DbContext.SaveChangesAsync();
+        dbContext.Summoners.Attach(summoner);
+        dbContext.Users.Attach(CurrentUser!);
+        await dbContext.SaveChangesAsync();
         
         NavManager.NavigateTo(NavManager.Uri, true);
     }

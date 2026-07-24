@@ -7,7 +7,7 @@
 @inject NavigationManager NavManager
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> Factory
 
 <div class="profile-layout-container">
     <div class="profile-nav">
@@ -48,9 +48,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var context = await Factory.CreateDbContextAsync();
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         CurrentUser = await UserManager.GetUserAsync(state.User);
-        PageUser = await DbContext.Users.SingleOrDefaultAsync(x => x.NormalizedUserName == Username.ToUpperInvariant());
+        PageUser = await context.Users.SingleOrDefaultAsync(x => x.NormalizedUserName == Username.ToUpperInvariant());
         if (PageUser is null)
         {
             NavManager.NavigateTo("/NotFound");

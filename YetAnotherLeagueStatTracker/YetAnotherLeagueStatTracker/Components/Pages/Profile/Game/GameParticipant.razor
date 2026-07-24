@@ -1,6 +1,5 @@
 @using YetAnotherLeagueStatTracker.Data.LeagueModels
 @using YetAnotherLeagueStatTracker.Services
-
 @inject DataDragon DataDragon
 
 <div class="team-participant">
@@ -25,7 +24,6 @@
     protected override async Task OnInitializedAsync()
     {
         Version = await DataDragon.GetVersion();
-        StateHasChanged();
         if (Participant.ChampionId == 141)
         {
             ChampIcon = Participant.ChampionTransform switch
