@@ -16,7 +16,6 @@
 <StatusMessage Message="@message"/>
 <p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
 <div class="row">
-    <div class="col-md-4">
         <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
             <input type="hidden" name="ReturnUrl" value="@ReturnUrl"/>
             <input type="hidden" name="RememberMe" value="@RememberMe"/>
@@ -37,7 +36,6 @@
                 <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
             </div>
         </EditForm>
-    </div>
 </div>
 <p>
     Don't have access to your authenticator device? You can

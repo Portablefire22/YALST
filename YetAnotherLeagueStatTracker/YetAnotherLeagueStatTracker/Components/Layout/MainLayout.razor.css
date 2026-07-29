@@ -21,6 +21,12 @@
 .user-link {
     position: absolute;
     right: 1.5em;
+    display: flex;
+}
+
+.user-link form {
+    margin-left: 1.5em;
+    color: #006bb7;
 }
 
 main {

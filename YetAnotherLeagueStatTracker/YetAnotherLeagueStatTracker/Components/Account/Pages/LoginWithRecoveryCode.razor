@@ -19,7 +19,6 @@
     an authenticator app code at log in or disable 2FA and log in again.
 </p>
 <div class="row">
-    <div class="col-md-4">
         <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator/>
             <ValidationSummary class="text-danger" role="alert"/>
@@ -30,7 +29,6 @@
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
         </EditForm>
-    </div>
 </div>
 
 @code {

@@ -1,6 +1,7 @@
 ﻿@using YetAnotherLeagueStatTracker.Data
 @inherits LayoutComponentBase
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
 <div class="page">
     <main>
@@ -9,7 +10,21 @@
             <SearchBox/>
             <AuthorizeView>
                 <Authorized>
-                    <a class="user-link" href="/profile/@Username">@Username</a>
+                    <div class="user-link">
+                        
+                        <a href="/profile/@Username">@Username</a>
+
+                        <a href="Account/Manage/">
+                            Account
+                        </a>
+                        <form action="Account/Logout" method="post">
+                            <AntiforgeryToken/>
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl"/>
+                            <button type="submit" class="nav-link">
+                                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                            </button>
+                        </form>
+                    </div>
                 </Authorized>
                 <NotAuthorized>
                     <div class="user-link">
@@ -45,6 +60,20 @@
 @code {
 
     private string? Username { get; set; }
+    
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+    
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
     
     protected override async Task OnInitializedAsync()
     {
