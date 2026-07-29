@@ -6,6 +6,18 @@
     margin: 0;
 }
 
+.home-link {
+    position: absolute;
+    font-weight: bolder;
+    left: 0;
+    color: #f5a9b8;
+    font-size: 2em;
+}
+
+.home-link:hover {
+    text-decoration: none;
+}
+
 .user-link {
     position: absolute;
     right: 1.5em;
