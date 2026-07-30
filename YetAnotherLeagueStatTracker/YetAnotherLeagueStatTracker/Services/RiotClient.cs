@@ -40,6 +40,9 @@ public class RiotClient : IRiotClient
       Logger = loggerFactory.CreateLogger<RiotClient>();
       RateLimitEventHandler += OnRateLimit;
 
+      var censored = String.Concat(ApiKey.TakeLast(8));
+      Logger.LogInformation($"Loaded API key ending with: {censored}");
+      
       HttpClient = new HttpClient()
       {
          DefaultRequestHeaders =

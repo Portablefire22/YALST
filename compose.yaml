@@ -3,7 +3,7 @@
     image: yetanotherleaguestattracker
     env_file: ".env"
     ports:
-      - "8080:7171"
+      - "7171:8080"
     build:
       context: .
       dockerfile: YetAnotherLeagueStatTracker/YetAnotherLeagueStatTracker/Dockerfile
