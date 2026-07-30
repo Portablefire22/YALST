@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using YetAnotherLeagueStatTracker.Client.Pages;
 using YetAnotherLeagueStatTracker.Components;
 using YetAnotherLeagueStatTracker.Components.Account;
 using YetAnotherLeagueStatTracker.Data;

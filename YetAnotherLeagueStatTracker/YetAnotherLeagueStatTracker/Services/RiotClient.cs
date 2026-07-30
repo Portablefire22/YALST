@@ -144,7 +144,7 @@ public class RiotClient : IRiotClient
          InternalTag = accountDto.TagLine.ToLowerInvariant(),
          Puuid = accountDto.Puuid,
          Region = platformRouting.ToLowerInvariant(),
-         RevisionDate = summonerDto.RevisionDate,
+         RevisionDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
          SummonerLevel = summonerDto.SummonerLevel,
          ProfileIconId = summonerDto.ProfileIconId,
       };
@@ -281,7 +281,7 @@ public class RiotClient : IRiotClient
    {
       var summonerModel = await SummonerModelByPuuid(puuid, tryDb: false);
       if (summonerModel == null) return null;
-
+      
       await UpdateSummonerRank(summonerModel);
       
       var ids = await MatchIdsByPuuid(summonerModel.Puuid, platformRouting: summonerModel.Region, count: 20);
