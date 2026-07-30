@@ -1,0 +1,15 @@
+﻿services:
+  yetanotherleaguestattracker:
+    image: yetanotherleaguestattracker
+    env_file: ".env"
+    ports:
+      - "8080:7171"
+    build:
+      context: .
+      dockerfile: YetAnotherLeagueStatTracker/YetAnotherLeagueStatTracker/Dockerfile
+  
+  yetanotherleaguestattracker.client:
+    image: yetanotherleaguestattracker.client
+    build: 
+      context: .
+      dockerfile: YetAnotherLeagueStatTracker/YetAnotherLeagueStatTracker.Client/Dockerfile

@@ -4,6 +4,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YetAnotherLeagueStatTracker
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YetAnotherLeagueStatTracker.Client", "YetAnotherLeagueStatTracker\YetAnotherLeagueStatTracker.Client\YetAnotherLeagueStatTracker.Client.csproj", "{33553108-FF43-46E7-83FD-5832D29015F2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4632DD47-7011-45B6-86E6-1CC9214A4F29}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
