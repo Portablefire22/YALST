@@ -27,10 +27,12 @@ public class RiotClient : IRiotClient
 
    private JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase};
    
+   // TODO Implement a Queue-System and prevent a summoner from being added multiple times
+   
    public RiotClient(IDbContextFactory<ApplicationDbContext> factory)
    {
       ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-      IConfiguration configuration = configurationBuilder.AddUserSecrets<Program>().Build();
+      IConfiguration configuration = configurationBuilder.AddUserSecrets<Program>().AddEnvironmentVariables().Build();
       ApiKey = configuration.GetValue<string>("RiotAPI")!;
       
       _scopeFactory = factory;

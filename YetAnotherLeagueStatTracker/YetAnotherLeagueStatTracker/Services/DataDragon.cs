@@ -59,7 +59,21 @@ public class DataDragon
         try
         {
             var versions = await x.GetFromJsonAsync<string[]>("https://ddragon.leagueoflegends.com/api/versions.json");
-            if (versions != null) Version = versions.FirstOrDefault() ?? "";
+
+            // Sometimes CommunityDragon can be a bit slow to update, so we just select the newest working
+            var index = 0;
+            Version ??= "";
+            while (true)
+            {
+                if (index > versions?.Length || versions == null) break;
+                var r = await x.GetAsync($"https://cdn.communitydragon.org/{versions[index]}/profile-icon/501");
+                if (r.IsSuccessStatusCode)
+                {
+                    Version = versions[index];
+                    break;
+                }
+                index++;
+            }
         }
         catch (Exception e)
         {
