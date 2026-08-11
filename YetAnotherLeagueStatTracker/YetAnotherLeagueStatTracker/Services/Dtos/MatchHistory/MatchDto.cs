@@ -1,6 +1,4 @@
-using YetAnotherLeagueStatTracker.Services.Dtos.MatchHistory;
-
-namespace YetAnotherLeagueStatTracker.Services.Models.MatchHistory;
+namespace YetAnotherLeagueStatTracker.Services.Dtos.MatchHistory;
 
 public class MatchDto
 {

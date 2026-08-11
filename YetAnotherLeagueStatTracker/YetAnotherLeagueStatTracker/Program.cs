@@ -5,6 +5,7 @@ using YetAnotherLeagueStatTracker.Components;
 using YetAnotherLeagueStatTracker.Components.Account;
 using YetAnotherLeagueStatTracker.Data;
 using YetAnotherLeagueStatTracker.Services;
+using YetAnotherLeagueStatTracker.Services.Riot;
 
 namespace YetAnotherLeagueStatTracker;
 

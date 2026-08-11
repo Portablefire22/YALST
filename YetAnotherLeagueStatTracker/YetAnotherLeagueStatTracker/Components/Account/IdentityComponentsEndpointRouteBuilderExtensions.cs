@@ -7,11 +7,10 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
-using YetAnotherLeagueStatTracker.Components.Account.Pages;
 using YetAnotherLeagueStatTracker.Components.Account.Pages.Manage;
 using YetAnotherLeagueStatTracker.Data;
 
-namespace Microsoft.AspNetCore.Routing;
+namespace YetAnotherLeagueStatTracker.Components.Account;
 
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {

@@ -1,14 +1,16 @@
-﻿using System.Globalization;
+﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Components.WebAssembly.Server;
 using Microsoft.EntityFrameworkCore;
 using YetAnotherLeagueStatTracker.Data;
 using YetAnotherLeagueStatTracker.Data.LeagueModels;
-using YetAnotherLeagueStatTracker.Services.Models;
-using YetAnotherLeagueStatTracker.Services.Models.MatchHistory;
+using YetAnotherLeagueStatTracker.Services.Dtos;
+using YetAnotherLeagueStatTracker.Services.Dtos.MatchHistory;
+using YetAnotherLeagueStatTracker.Services.Events;
+using YetAnotherLeagueStatTracker.Services.Riot.Actions;
+using YetAnotherLeagueStatTracker.Services.Routing;
 
-namespace YetAnotherLeagueStatTracker.Services;
+namespace YetAnotherLeagueStatTracker.Services.Riot;
 
 public class RiotClient : IRiotClient
 {
@@ -24,9 +26,13 @@ public class RiotClient : IRiotClient
    private HttpClient HttpClient { get; set; }
 
    private const string ApiUrl = "api.riotgames.com";
-
+   
    private JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase};
    
+   private ConcurrentQueue<IQueuedAction> QueuedActions { get; } = [];
+   
+   private Task QueueProcessing { get; set; }
+
    // TODO Implement a Queue-System and prevent a summoner from being added multiple times
    
    public RiotClient(IDbContextFactory<ApplicationDbContext> factory)
@@ -52,7 +58,115 @@ public class RiotClient : IRiotClient
             {"X-Riot-Token", ApiKey}
          }
       };
+      QueueProcessing = new Task(async () =>
+      {
+         await ProcessQueue();
+      });
+      QueueProcessing.Start();
    }
+
+   private async Task ProcessQueue()
+   {
+      while (true)
+      {
+         try
+         {
+            if (IsLimited) continue;
+            if (!QueuedActions.TryDequeue(out var result))
+            {
+               
+               continue;
+            }
+            Logger.LogInformation($"Processing: {result}");
+            await ProcessAction(result);
+            // Likely that it failed if we're limited at the end of it
+            if (IsLimited)
+            {
+               QueuedActions.Enqueue(result);
+            } 
+         }
+         catch (Exception e)
+         {
+            Logger.LogError($"{e}");
+         }
+         finally
+         {
+            await Task.Delay(10);
+         }
+      }
+   }
+
+   private async Task ProcessAction(IQueuedAction action)
+   {
+      switch (action)
+      {
+         case QueueSummoner queueSummoner:
+            var tryDb = queueSummoner is not QueueUpdateSummoner;
+            SummonerModel? summonerModel = null;
+            if (queueSummoner.Puuid != null)
+            {
+               summonerModel = await SummonerModelByPuuid(queueSummoner.Puuid, null, tryDb);
+            }
+            else
+            {
+               if (queueSummoner is { TagLine: not null, GameName: not null, Region: not null})
+                  summonerModel = await SummonerModelByRiotId(queueSummoner.GameName, queueSummoner.TagLine,
+                     queueSummoner.Region);
+            }
+            queueSummoner.SummonerModel = summonerModel;
+            break;
+         case QueueUpdateMatchHistory queueUpdateMatchHistory:
+            await UpdateMatchHistory(queueUpdateMatchHistory);
+            break;
+         case QueueMatch queueMatch:
+            _ = await GetMatchById(queueMatch.MatchId, regionalRouting: queueMatch.RegionalRouting);
+            break;
+      }
+      action.InvokeCallback();
+   }
+
+   private async Task UpdateMatchHistory(QueueUpdateMatchHistory queueUpdateMatchHistory)
+   {
+      var summoner = await SummonerModelByPuuid(queueUpdateMatchHistory.Puuid);
+      if (summoner == null) return;
+
+      var matchIds = await MatchIdsByPuuid(summoner.Puuid, platformRouting: summoner.Region, count: 100);
+      await using (var db = await _scopeFactory.CreateDbContextAsync())
+      {
+         var existingIds = db.MatchParticipants.Where(x => x.Summoner == summoner)
+            .Select(x => x.Match.MatchId);
+         foreach (var id in matchIds)
+         {
+            if (!await existingIds.ContainsAsync(id))
+            {
+               QueueAction(new QueueMatch(id, RegionalRouting.FromRegion(summoner.Region)));
+            }
+         }
+      }
+
+      if (queueUpdateMatchHistory.Parent != null) QueuedActions.Enqueue(queueUpdateMatchHistory.Parent);
+   }
+
+   public bool InQueue(string puuid)
+   {
+      return QueuedActions.FirstOrDefault(x => x is QueueUpdateSummoner up && up.Puuid == puuid) != null;
+   }
+   
+   public bool InQueue(string gameName, string tagLine)
+   {
+      return QueuedActions.FirstOrDefault(x => x is not QueueUpdateSummoner up || up.GameName?.ToLowerInvariant() != gameName.ToLowerInvariant()
+                                                                               || up.TagLine?.ToLowerInvariant() != tagLine.ToLowerInvariant()) != null;
+   }
+   
+   public void QueueAction(IQueuedAction action) {
+      if (action is QueueUpdateSummoner { Puuid: not null } queueUpdateSummoner)
+      {
+         QueueAction(new QueueUpdateMatchHistory(queueUpdateSummoner.Puuid,queueUpdateSummoner));
+         return;
+      }
+      QueuedActions.Enqueue(action);
+   }
+   
    private async Task<HttpResponseMessage?> GetAsync(Uri? requestUri)
    {
       if (IsLimited) return null;

@@ -1,4 +1,4 @@
-﻿namespace YetAnotherLeagueStatTracker.Services;
+﻿namespace YetAnotherLeagueStatTracker.Services.Routing;
 
 public class RegionalRouting
 {

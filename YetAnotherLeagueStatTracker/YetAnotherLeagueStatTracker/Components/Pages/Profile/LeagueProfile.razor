@@ -3,6 +3,8 @@
 @using YetAnotherLeagueStatTracker.Data
 @using YetAnotherLeagueStatTracker.Data.LeagueModels
 @using YetAnotherLeagueStatTracker.Services
+@using YetAnotherLeagueStatTracker.Services.Riot
+@using YetAnotherLeagueStatTracker.Services.Riot.Actions
 @inject RiotClient RiotClient
 @inject NavigationManager NavigationManager
 @inject ApplicationDbContext DbContext
@@ -28,10 +30,27 @@
     public RankedModel? Rank { get; set; }
     
     private SummonerModel? Summoner { get; set; } = null;
-    
+
+    private void UpdateCallback(SummonerModel? summoner)
+    {
+        if (summoner == null)
+        {
+            NavigationManager.NavigateTo("/NotFound");
+            return;
+        }
+
+        var models = summoner.RankedModels?.ToArray();
+        Rank = models switch
+        {
+            { Length: >= 2 } => RankedModel.HighestRank(models[0], models[1]),
+            { Length: 1 } => models[0],
+            _ => Rank
+        };
+        Summoner = summoner;
+    }
 
     protected override async Task OnInitializedAsync()
-    {
+    { 
         Summoner = await RiotClient.SummonerModelByRiotId(GameName, Tag, Region);
         if (Summoner == null)
         {
@@ -46,6 +65,17 @@
             { Length: 1 } => models[0],
             _ => Rank
         };
-        StateHasChanged();
+        Summoner = Summoner;
+       /*RiotClient.QueueAction(new QueueSummoner(GameName, Tag, Region, UpdateCallback));
+
+       while (true)
+       {
+           if (Summoner != null)
+           {
+               StateHasChanged();
+               break;
+           }
+           await Task.Delay(5);
+       }*/
     }
 }

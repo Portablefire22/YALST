@@ -1,4 +1,4 @@
-﻿namespace YetAnotherLeagueStatTracker.Services.Models;
+﻿namespace YetAnotherLeagueStatTracker.Services.Dtos;
 
 public class SummonerDto
 {

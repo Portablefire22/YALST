@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
-using YetAnotherLeagueStatTracker.Services.Models;
+using YetAnotherLeagueStatTracker.Services.Dtos;
+using YetAnotherLeagueStatTracker.Services.Riot;
 
 namespace YetAnotherLeagueStatTracker.Services;
 

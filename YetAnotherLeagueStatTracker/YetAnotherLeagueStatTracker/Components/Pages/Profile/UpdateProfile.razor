@@ -1,4 +1,7 @@
-﻿@using YetAnotherLeagueStatTracker.Services
+﻿@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@using YetAnotherLeagueStatTracker.Services
+@using YetAnotherLeagueStatTracker.Services.Riot
+@using YetAnotherLeagueStatTracker.Services.Riot.Actions
 @inject RiotClient RiotClient
 @inject NavigationManager NavigationManager
 
@@ -22,17 +25,41 @@
     [Parameter]
     public long LastUpdated { get; set; }
 
-    private bool Disabled { get; set; } = false;
+    private bool Disabled { get; set; } = true;
+
+    private SummonerModel? Summoner { get; set; } = null;
+    
+    public void Callback(SummonerModel? summoner)
+    {
+        Console.WriteLine($"/profile/{summoner?.Region}/{summoner?.GameName}-{summoner?.TagLine}");
+        Summoner = summoner;
+        Disabled = false;
+    }
     
     public async Task OnUpdate()
     {
         Disabled = true;
-        StateHasChanged();
+        /*StateHasChanged();
         var summoner = await RiotClient.UpdateSummonerByPuuid(Puuid);
         if (summoner == null) return;
-        Console.WriteLine($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}");
-        Disabled = false;
+        */
+        RiotClient.QueueAction(new QueueUpdateSummoner(Puuid, Callback));
+
+        while (true)
+        {
+            if (!Disabled && Summoner != null)
+            {
+                StateHasChanged();
+                //NavigationManager.NavigateTo($"/profile/{Summoner.Region}/{Summoner.GameName}-{Summoner.TagLine}", true);
+                break;
+            }
+            await Task.Delay(5);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Disabled = RiotClient.InQueue(Puuid);
         StateHasChanged();
-        NavigationManager.NavigateTo($"/profile/{summoner.Region}/{summoner.GameName}-{summoner.TagLine}", true);
     }
 }

@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace YetAnotherLeagueStatTracker.Services.Models;
+﻿namespace YetAnotherLeagueStatTracker.Services.Dtos;
 
 
 public class AccountDto
