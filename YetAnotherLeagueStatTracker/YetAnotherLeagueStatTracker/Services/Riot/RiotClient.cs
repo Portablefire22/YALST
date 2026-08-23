@@ -498,7 +498,7 @@ public class RiotClient : IRiotClient
    public async Task<MatchParticipant[]> GetMatchParticipants(string matchId)
    {
       await using var db = await _scopeFactory.CreateDbContextAsync();
-      return await db.MatchParticipants.Where(x => x.Match.MatchId == matchId).ToArrayAsync();
+      return await db.MatchParticipants.Include(x => x.Summoner).Where(x => x.Match.MatchId == matchId).ToArrayAsync();
    }
    
 
