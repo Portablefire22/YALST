@@ -22,6 +22,8 @@ public class Program
             .AddInteractiveWebAssemblyComponents()
             .AddAuthenticationStateSerialization();
 
+        builder.Services.AddControllers();
+
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddScoped<IdentityRedirectManager>();
         builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
@@ -96,6 +98,7 @@ public class Program
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();
+        app.MapControllers();
 
         app.Run();
     }

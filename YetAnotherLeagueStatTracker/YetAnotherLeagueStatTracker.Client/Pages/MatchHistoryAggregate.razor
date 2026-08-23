@@ -1,0 +1,81 @@
+@using System.Net
+@using System.Text.Json
+@using Microsoft.EntityFrameworkCore
+@using YetAnotherLeagueStatTracker.Client.Data.Dtos
+
+@inject HttpClient HttpClient
+
+@attribute [StreamRendering]
+
+<div class="match-history">
+
+    @if (History != null)
+    {
+        @foreach (var game in History)
+        {
+            <MatchHistoryGame Game="@game" ShowProfileIcon="@ShowProfileIcon"></MatchHistoryGame>
+        }
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public required SummonerDto[] Summoners { get; set; }
+
+    private bool ShowProfileIcon => Summoners.Length > 1;
+    
+    private ProfileMatch[]? History { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Get first 10 matches 
+        var uri = Summoners.Aggregate("api/Matches/GetMatches", (current, summoner) => current + $"&puuid={summoner.Puuid}");
+        var resp = await HttpClient.GetAsync(uri);
+        if (resp.StatusCode != HttpStatusCode.OK) return;
+
+        var json = await JsonSerializer.DeserializeAsync<MatchDto[]>(await resp.Content.ReadAsStreamAsync());
+
+        if (json == null) return;
+        var tempList = new List<ProfileMatch>();
+        foreach (var matchDto in json)
+        {
+            var partResp= await HttpClient.GetAsync($"api/Matches/GetMatchParticipants?matchId={matchDto.MatchId}");
+            if (partResp.StatusCode != HttpStatusCode.OK) continue;
+            var participants = await JsonSerializer.DeserializeAsync<MatchParticipantDto[]>(await partResp.Content.ReadAsStreamAsync());
+            if (participants == null || participants.Length == 0) continue;;
+ 
+            var teams = new Dictionary<int, List<MatchParticipantDto>>();
+
+            MatchParticipantDto? owner = null;
+            foreach (var part in participants)
+            {
+                if (!teams.ContainsKey(part.TeamId)) teams.Add(part.TeamId, new List<MatchParticipantDto>());
+                teams[part.TeamId].Add(part);
+                if (owner == null && Summoners.Contains(part.Summoner)) owner = part;
+            }
+            
+            if (owner == null) return;
+            
+            
+            tempList.Add(new ProfileMatch()
+            {
+                Match =  matchDto,
+                ParticipantsByTeam = teams,
+                ProfileOwner  =  owner
+            });
+        }
+        History = [.. tempList];
+    }
+    
+    
+    public class ProfileMatch
+    {
+        public MatchDto Match { get; set; }
+        public MatchParticipantDto ProfileOwner { get; set; }
+        public Dictionary<int, List<MatchParticipantDto>> ParticipantsByTeam { get; set; } = [];
+    }
+
+}
+
+

@@ -33,7 +33,7 @@ public class RiotClient : IRiotClient
    
    private Task QueueProcessing { get; set; }
 
-   // TODO Implement a Queue-System and prevent a summoner from being added multiple times
+   // TODO Implement incremental loading on match history
    
    public RiotClient(IDbContextFactory<ApplicationDbContext> factory)
    {
@@ -487,6 +487,20 @@ public class RiotClient : IRiotClient
       }
       return ids;
    }
+
+   public async Task<MatchModel[]> GetMatches(IEnumerable<string> puuids, int count = 10)
+   {
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+      var matchModels = db.MatchParticipants.Where(x => puuids.Contains(x.Summoner.Puuid)).Select(x => x.Match);
+      return await matchModels.OrderByDescending(x => x.GameCreation).Take(count).ToArrayAsync();
+   }
+
+   public async Task<MatchParticipant[]> GetMatchParticipants(string matchId)
+   {
+      await using var db = await _scopeFactory.CreateDbContextAsync();
+      return await db.MatchParticipants.Where(x => x.Match.MatchId == matchId).ToArrayAsync();
+   }
+   
 
    private async Task<MatchDto?> GetMatchDto(string matchId, string regionalRouting)
    {

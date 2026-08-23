@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using YetAnotherLeagueStatTracker.Client.Data.Dtos;
 
 namespace YetAnotherLeagueStatTracker.Data.LeagueModels;
 
@@ -32,4 +33,22 @@ public class SummonerModel
             _ => null
         };
     }
+
+
+    public static SummonerDto ToDto(SummonerModel summonerModel)
+    {
+        return new SummonerDto()
+        {
+            GameName = summonerModel.GameName,
+            ProfileIconId = summonerModel.ProfileIconId,
+            Puuid = summonerModel.Puuid,
+            Region = summonerModel.Region,
+            RevisionDate = summonerModel.RevisionDate,
+            SummonerLevel = summonerModel.SummonerLevel,
+            Tagline = summonerModel.TagLine
+        };
+    }
+
+    public SummonerDto ToDto() => ToDto(this);
+
 }

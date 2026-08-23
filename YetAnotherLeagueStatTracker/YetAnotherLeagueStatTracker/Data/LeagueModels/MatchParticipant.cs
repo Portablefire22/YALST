@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using YetAnotherLeagueStatTracker.Client.Data.Dtos;
 
 namespace YetAnotherLeagueStatTracker.Data.LeagueModels;
 
@@ -59,4 +60,54 @@ public class MatchParticipant
     
     public int MainRune { get; set; }
     public int SubRune { get; set; }
+
+    public static MatchParticipantDto ToDto(MatchParticipant participant)
+    {
+        return new MatchParticipantDto()
+        {
+            Summoner =  participant.Summoner?.ToDto(),
+            ChampionName =  participant.ChampionName,
+            ChampionId = participant.ChampionId,
+            ChampionTransform = participant.ChampionTransform,
+            DamageDealtToBuildings = participant.DamageDealtToBuildings,
+            DamageDealtToObjectives = participant.DamageDealtToObjectives,
+            DamageSelfMitigated = participant.DamageSelfMitigated,
+            Deaths = participant.Deaths,
+            FirstBlood = participant.FirstBlood,
+            FirstTowerKill = participant.FirstTowerKill,
+            GoldEarned = participant.GoldEarned,
+            TeamPosition =  participant.TeamPosition,
+            Item0 = participant.Item0,
+            Item1 = participant.Item1,
+            Item2 = participant.Item2,
+            Item3 = participant.Item3,
+            Item4 = participant.Item4,
+            Item5 = participant.Item5,
+            Item6 = participant.Item6,
+            Kills = participant.Kills,
+            LargestMultiKill = participant.LargestMultiKill,
+            Assists =  participant.Assists,
+            ChampionLevel = participant.ChampionLevel,
+            MagicDamageDealtToChampions =  participant.MagicDamageDealtToChampions,
+            MainRune =  participant.MainRune,
+            PhysicalDamageDealtToChampions =  participant.PhysicalDamageDealtToChampions,
+            Placement =  participant.Placement,
+            PlayerAugment1 =  participant.PlayerAugment1,
+            PlayerAugment2 =  participant.PlayerAugment2,
+            PlayerAugment3 =  participant.PlayerAugment3,
+            PlayerAugment4 =  participant.PlayerAugment4,
+            PlayerSubteamId = participant.PlayerSubteamId,
+            Summoner1Id = participant.Summoner1Id,
+            Summoner2Id = participant.Summoner2Id,
+            TotalDamageTaken = participant.TotalDamageTaken,
+            VisionScore = participant.VisionScore,
+            Win = participant.Win,
+            SubRune =  participant.SubRune,
+            SubteamPlacement =   participant.SubteamPlacement,
+            TeamId =  participant.TeamId,
+            TrueDamageDealtToChampions =  participant.TrueDamageDealtToChampions,
+        };
+    }
+
+    public MatchParticipantDto ToDto() => ToDto(this);
 }
