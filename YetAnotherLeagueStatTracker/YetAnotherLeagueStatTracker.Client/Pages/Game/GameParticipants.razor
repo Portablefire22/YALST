@@ -1,6 +1,4 @@
-@using YetAnotherLeagueStatTracker.Data.LeagueModels
-@using YetAnotherLeagueStatTracker.Services
-@inject DataDragon DataDragon
+@using YetAnotherLeagueStatTracker.Client.Data.Dtos
 
 
 <div class="game-participants-container">
@@ -16,12 +14,12 @@
 
 @code {
     [Parameter]
-    public required Dictionary<int, List<MatchParticipant>> Participants { get; set; }
+    public required Dictionary<int, List<MatchParticipantDto>> Participants { get; set; }
     [Parameter]
-    public required MatchParticipant ProfileOwner { get; set; }
+    public required MatchParticipantDto ProfileOwner { get; set; }
 
     
-    private Dictionary<int, List<MatchParticipant>> EndParticipants { get; set; }
+    private Dictionary<int, List<MatchParticipantDto>> EndParticipants { get; set; }
     
     private bool _doSubteams = false;
 

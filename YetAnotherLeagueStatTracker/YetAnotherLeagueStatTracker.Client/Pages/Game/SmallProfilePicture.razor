@@ -1,6 +1,6 @@
-@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@using YetAnotherLeagueStatTracker.Client.Data.Dtos
 @inject IJSRuntime JsRuntime
-@rendermode  InteractiveServer
+@rendermode InteractiveWebAssembly
 
 <div class="pfp-container" data-bs-toggle="tooltip" data-bs-placement="top" 
      data-bs-title="@Summoner.GameName#@Summoner.TagLine (@Summoner.Region)">
@@ -9,7 +9,7 @@
 
 @code {
     [Parameter]
-    public required SummonerModel Summoner { get; set; }
+    public required SummonerDto Summoner { get; set; }
     [Parameter]
     public required string Version { get; set; }
     

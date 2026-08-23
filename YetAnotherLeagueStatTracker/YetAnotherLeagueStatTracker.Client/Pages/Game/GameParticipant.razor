@@ -1,6 +1,4 @@
-@using YetAnotherLeagueStatTracker.Data.LeagueModels
-@using YetAnotherLeagueStatTracker.Services
-@inject DataDragon DataDragon
+@using YetAnotherLeagueStatTracker.Client.Data.Dtos
 
 <div class="team-participant">
     <div class="image-container">
@@ -12,8 +10,10 @@
 
 @code {
     [Parameter]
-    public required MatchParticipant Participant { get; set; }
-    public string Version { get; set;  }= "";
+    public required MatchParticipantDto Participant { get; set; }
+    
+    
+    public string Version { get; set;  }= "latest";
 
     private string Id => IsProfileOwner ? "ProfileOwner" : Participant.Summoner.GameName;
     
@@ -23,7 +23,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Version = await DataDragon.GetVersion();
         if (Participant.ChampionId == 141)
         {
             ChampIcon = Participant.ChampionTransform switch

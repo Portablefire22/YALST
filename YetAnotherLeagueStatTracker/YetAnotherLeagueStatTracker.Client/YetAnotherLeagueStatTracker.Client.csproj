@@ -22,4 +22,22 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <AdditionalFiles Include="Pages\Game\GameAugment.razor" />
+      <AdditionalFiles Include="Pages\Game\GameParticipant.razor" />
+      <AdditionalFiles Include="Pages\Game\GameParticipants.razor" />
+      <AdditionalFiles Include="Pages\Game\GameSpell.razor" />
+      <AdditionalFiles Include="Pages\Game\MatchHistoryGame.razor" />
+      <AdditionalFiles Include="Pages\Game\MatchItem.razor" />
+      <AdditionalFiles Include="Pages\Game\SmallProfilePicture.razor" />
+      <AdditionalFiles Include="Pages\Game\Subteam.razor" />
+      <AdditionalFiles Include="Pages\Game\Team.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.AspNetCore.Components.Server">
+        <HintPath>..\..\..\..\..\..\nix\store\5806p3qnmr1y46jkndn9n9a5cgzzmhba-dotnet-sdk-10.0.302\share\dotnet\shared\Microsoft.AspNetCore.App\10.0.10\Microsoft.AspNetCore.Components.Server.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

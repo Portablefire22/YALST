@@ -1,0 +1,26 @@
+@using YetAnotherLeagueStatTracker.Services
+
+@inject DataDragon DataDragon
+
+@attribute [StreamRendering]
+
+<div class="spell-image">
+    @if (SummonerSpell != null)
+    {
+        <img src="@(SummonerSpell)"/>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int SummonerId { get; set; }
+
+    public string? SummonerSpell { get; set; }= null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SummonerSpell = DataDragon.GetSummonerSpellFromId(SummonerId.ToString());
+        StateHasChanged();
+    }
+
+}

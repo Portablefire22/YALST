@@ -56,6 +56,8 @@ public class Program
         
         builder.Services.AddSingleton<RiotClient>();
         builder.Services.AddSingleton<DataDragon>();
+
+        builder.Services.AddHttpClient();
         
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

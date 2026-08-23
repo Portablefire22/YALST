@@ -1,13 +1,12 @@
 ﻿@page "/Profile/{Region}/{GameName}-{Tag}"
 @using Microsoft.EntityFrameworkCore.Query.Internal
+@using YetAnotherLeagueStatTracker.Client.Data.Dtos
+@using YetAnotherLeagueStatTracker.Client.Pages
 @using YetAnotherLeagueStatTracker.Data
 @using YetAnotherLeagueStatTracker.Data.LeagueModels
-@using YetAnotherLeagueStatTracker.Services
 @using YetAnotherLeagueStatTracker.Services.Riot
-@using YetAnotherLeagueStatTracker.Services.Riot.Actions
 @inject RiotClient RiotClient
 @inject NavigationManager NavigationManager
-@inject ApplicationDbContext DbContext
 
 @if (Summoner != null)
 {
@@ -15,7 +14,10 @@
                  SummonerLevel="@Summoner.SummonerLevel" Rank="@Rank" ProfileIcon="@Summoner.ProfileIconId"
                  Puuid="@Summoner.Puuid"
                  LastUpdated="@Summoner.RevisionDate"/>
-    <MatchHistoryAggregate Summoners="@([Summoner])" /> 
+    if (SummonerDto != null)
+    {
+        <MatchHistoryAggregate Summoners="@([SummonerDto])"/>
+    }
 }
 
 @code {
@@ -30,6 +32,8 @@
     public RankedModel? Rank { get; set; }
     
     private SummonerModel? Summoner { get; set; } = null;
+    
+    private SummonerDto ? SummonerDto { get; set; } = null;
 
     private void UpdateCallback(SummonerModel? summoner)
     {
@@ -52,7 +56,8 @@
     protected override async Task OnInitializedAsync()
     { 
         Summoner = await RiotClient.SummonerModelByRiotId(GameName, Tag, Region);
-        if (Summoner == null)
+        SummonerDto = Summoner?.ToDto();
+        if (Summoner == null || SummonerDto == null)
         {
             NavigationManager.NavigateTo("/NotFound");
             return;
@@ -66,6 +71,7 @@
             _ => Rank
         };
         Summoner = Summoner;
+        StateHasChanged();
        /*RiotClient.QueueAction(new QueueSummoner(GameName, Tag, Region, UpdateCallback));
 
        while (true)

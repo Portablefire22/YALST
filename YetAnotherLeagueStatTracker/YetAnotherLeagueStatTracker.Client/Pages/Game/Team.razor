@@ -1,4 +1,4 @@
-@using YetAnotherLeagueStatTracker.Data.LeagueModels
+@using YetAnotherLeagueStatTracker.Client.Data.Dtos
 
 
 @foreach (var (id, team) in Participants)
@@ -13,7 +13,7 @@
 
 @code {
     [Parameter]
-    public required Dictionary<int, List<MatchParticipant>> Participants { get; set; }
+    public required Dictionary<int, List<MatchParticipantDto>> Participants { get; set; }
     [Parameter]
-    public required MatchParticipant ProfileOwner { get; set; }
+    public required MatchParticipantDto ProfileOwner { get; set; }
 }

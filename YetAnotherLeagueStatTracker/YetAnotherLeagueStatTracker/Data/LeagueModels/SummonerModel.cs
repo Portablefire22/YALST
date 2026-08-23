@@ -45,7 +45,7 @@ public class SummonerModel
             Region = summonerModel.Region,
             RevisionDate = summonerModel.RevisionDate,
             SummonerLevel = summonerModel.SummonerLevel,
-            Tagline = summonerModel.TagLine
+            TagLine = summonerModel.TagLine
         };
     }
 

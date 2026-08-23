@@ -36,4 +36,16 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\GameAugment.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\GameParticipant.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\GameParticipants.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\GameSpell.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\MatchHistoryGame.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\MatchItem.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\SmallProfilePicture.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\Subteam.razor" />
+      <_ContentIncludedByDefault Remove="Components\Pages\Profile\Game\Team.razor" />
+    </ItemGroup>
+
 </Project>

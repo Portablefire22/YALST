@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Net.Http.Json;
+using System.Text.Json;
 using YetAnotherLeagueStatTracker.Services.Dtos;
-using YetAnotherLeagueStatTracker.Services.Riot;
 
 namespace YetAnotherLeagueStatTracker.Services;
 
@@ -15,7 +15,7 @@ public class DataDragon
     private ILogger Logger { get; }
 
 
-    public static Dictionary<string, SummonerSpellDto> _summonerSpells = new Dictionary<string, SummonerSpellDto>();
+    public static Dictionary<string, SummonerSpellDto> SummonerSpells = new Dictionary<string, SummonerSpellDto>();
 
     private static Dictionary<int, AugmentDto> _augments = [];
     
@@ -39,9 +39,7 @@ public class DataDragon
     
     public DataDragon()
     {
-        var loggerFactory = LoggerFactory.Create(builder => 
-            builder.AddConsole());
-        Logger = loggerFactory.CreateLogger<RiotClient>();
+        var _ = UpdateVersion();
     }
 
     public async Task<string> GetVersion()
@@ -109,10 +107,10 @@ public class DataDragon
             });
         if (spells == null) return;
         
-        _summonerSpells.Clear();
+        SummonerSpells.Clear();
         foreach (var spell in spells.Data)
         {
-            _summonerSpells.TryAdd(spell.Value.Key, spell.Value);
+            SummonerSpells.TryAdd(spell.Value.Key, spell.Value);
         }
 
         var augs = await x.GetFromJsonAsync<AugmentsDto>(
@@ -151,7 +149,7 @@ public class DataDragon
 
     public string? GetSummonerSpellFromId(string id)
     {
-        _summonerSpells.TryGetValue(id, out var spell);
+        SummonerSpells.TryGetValue(id, out var spell);
         return spell?.GetImageUrl(Version);
     }
 

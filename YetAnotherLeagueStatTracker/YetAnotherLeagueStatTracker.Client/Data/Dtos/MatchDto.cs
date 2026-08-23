@@ -11,12 +11,12 @@ public class MatchDto
     public long GameDuration { get; set; }
     public long GameEndTimestamp { get; set; }
     public long GameId { get; set; }
-    public required string GameMode { get; set; }
-    public required string GameName { get; set; }
+    public string GameMode { get; set; }
+    public string GameName { get; set; }
     public long GameStartTimestamp { get; set; }
-    public required string GameType { get; set; }
+    public string GameType { get; set; }
     public int MapId { get; set; }
-    public required string PlatformId { get; set; }
+    public string PlatformId { get; set; }
     public int QueueId { get; set; }
     public string? TournamentCode { get; set; }
 }
