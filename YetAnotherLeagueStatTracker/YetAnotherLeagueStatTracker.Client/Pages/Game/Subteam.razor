@@ -1,9 +1,12 @@
 @using YetAnotherLeagueStatTracker.Client.Data
 @using YetAnotherLeagueStatTracker.Client.Data.Dtos
+@using YetAnotherLeagueStatTracker.Services
+
+@inject DataDragon DataDragon
 
 @foreach (var (id, participants) in Participants)
 {
-    <div class="sub-team-col" id="@(CherryTeam.GetSubTeamName(id))">
+    <div class="sub-team-col" id="@(DataDragon.GetSubTeamName(id))">
         @foreach (var participant in participants)
         {
             <GameParticipant Participant="participant" IsProfileOwner="@(participant == ProfileOwner)"></GameParticipant>

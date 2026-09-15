@@ -2,10 +2,11 @@
 @using System.Text.Json
 @using Microsoft.EntityFrameworkCore
 @using YetAnotherLeagueStatTracker.Client.Data.Dtos
+@using YetAnotherLeagueStatTracker.Client.Pages.Game
 
 @inject HttpClient HttpClient
 
-@attribute [StreamRendering]
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <div class="match-history">
 

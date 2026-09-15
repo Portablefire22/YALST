@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
+using YetAnotherLeagueStatTracker.Client.Data.Dtos;
 using YetAnotherLeagueStatTracker.Services.Dtos;
 
 namespace YetAnotherLeagueStatTracker.Services;
