@@ -1,0 +1,6 @@
+[submodule "YALST-Frontend"]
+	path = YALST-Frontend
+	url = https://github.com/Portablefire22/YALST-Frontend.git
+[submodule "YALST-Backend"]
+	path = YALST-Backend
+	url = https://github.com/Portablefire22/YALST-Backend.git
